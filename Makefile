@@ -1,3 +1,10 @@
+# RUN make in the terminal to build the cpulator executable
+#then run ./executable <file1.c> <file1.h> <file2.c> <file2.h>, etc to combine them into one file
+
+###
+
+
+
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2
 
