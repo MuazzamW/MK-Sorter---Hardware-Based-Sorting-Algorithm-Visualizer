@@ -9,7 +9,7 @@
 volatile short int *PIXEL_BUFFER_START;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
-short int COLORS[7] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96, 0x8D91, 0x6B4D};
+short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96, 0x8D91, 0x6B4D, 0xF800, 0x07E0};
 char SMALL_CHAR[26][5] = {
 {2,5,7,5,5}, // A
 {6,5,6,5,6}, // B
@@ -117,24 +117,43 @@ int main(void) {
 	
 	clearScreen();
 	
-	// Side panel and top panel
-	drawRectangle(0, 0, 319, 40, COLORS[4]);
-	drawBorder(0, 0, 319, 40, COLORS[1]);
+	// Top Panel 
+	drawRectangle(0, 0, 319, 30, COLORS[4]);
+	drawBorder(0, 0, 319, 30, COLORS[1]);
 	
-	drawRectangle(0, 43, 60, 239, COLORS[3]);
-	drawBorder(0, 43, 60, 239, COLORS[1]);
+	// Side Panel
+	drawRectangle(0, 32, 45, 239, COLORS[3]);
+	drawBorder(0, 32, 45, 239, COLORS[1]);
 	
-	// Buttons
-	drawRectangle(5, 48, 55, 80, COLORS[6]);
-	drawBorder(5, 48, 55, 80, COLORS[1]);
-	drawRectangle(5, 85, 55, 117, COLORS[6]);
-	drawBorder(5, 85, 55, 117, COLORS[1]);
+	// Bubble sort button
+	drawRectangle(3, 35, 42, 60, COLORS[6]);
+	drawBorder(3, 35, 42, 60, COLORS[1]);
+	
+	// Insertion sort button
+	drawRectangle(3, 63, 42, 87, COLORS[6]);
+	drawBorder(3, 63, 42, 87, COLORS[1]);
+	
+	// Radix sort button
+	drawRectangle(3, 90, 42, 115, COLORS[6]);
+	drawBorder(3, 90, 42, 115, COLORS[1]);
+	
+	// Quick sort button
+	drawRectangle(3, 118, 42, 143, COLORS[6]);
+	drawBorder(3, 118, 42, 143, COLORS[1]);
+	
+	// Reset Button
+	drawRectangle(3, 182, 42, 207, COLORS[7]);
+	drawBorder(3, 182, 42, 207, COLORS[1]);
+	
+	// Go button
+	drawRectangle(3, 210, 42, 235, COLORS[8]);
+	drawBorder(3, 210, 42, 235, COLORS[1]);
 	
 	// Random rectangles
 	int randomY = rand() % 120 + 50;
-	int starting_x = 68;
+	int starting_x = 50;
 	int dx = 17;
-	for (int rect_num = 0; rect_num <= 12; rect_num++) {
+	for (int rect_num = 0; rect_num <= 13; rect_num++) {
 		drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
 		drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
 		starting_x = starting_x + dx + 2;
@@ -142,13 +161,19 @@ int main(void) {
 	}
 	
 	// Draw text on the screen
-	drawLargeText(130, 17, "MK SORTER", COLORS[1]);
-	drawSmallText(270, 30, "ECE PROJECT", COLORS[1]);
-	drawSmallText(5, 30, "MUAZZAM W AND KARINA K", COLORS[1]);
-	drawMediumText(10, 55, "BUBBLE", COLORS[0]);
-	drawMediumText(10, 65, "SORT", COLORS[0]);
-	drawMediumText(10, 93, "QUICK", COLORS[0]);
-	drawMediumText(10, 103, "SORT", COLORS[0]);
+	drawLargeText(130, 14, "MK SORTER", COLORS[1]);
+	drawSmallText(270, 20, "ECE PROJECT", COLORS[1]);
+	drawSmallText(5, 20, "MUAZZAM W AND KARINA K", COLORS[1]);
+	drawSmallText(7, 40, "BUBBLE", COLORS[0]);
+	drawSmallText(7, 50, "SORT", COLORS[0]);
+	drawSmallText(5, 68, "INSERTION", COLORS[0]);
+	drawSmallText(5, 78, "SORT", COLORS[0]);
+	drawSmallText(7, 95, "RADIX", COLORS[0]);
+	drawSmallText(7, 105, "SORT", COLORS[0]);
+	drawSmallText(7, 123, "QUICK", COLORS[0]);
+	drawSmallText(7, 133, "SORT", COLORS[0]);
+	drawMediumText(9, 192, "RESET", COLORS[0]);
+	drawMediumText(17, 220, "GO", COLORS[0]);
 	
 	return 0;
 }
