@@ -10,3 +10,4 @@
 # Unignore all .c files in all directories
 !*.c
 !*Makefile
+!*.h
