@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 // GLOBALS ------------------------------------------------
@@ -96,20 +97,6 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
-// DECLARATIONS -------------------------------------------
-
-void clearScreen();
-void plotPixel(int x, int y, short int line_color);
-void drawLine(int x1, int y1, int x2, int y2, short int line_color);
-void drawRectangle(int x1, int y1, int x2, int y2, short int line_color);
-void drawBorder(int x1, int y1, int x2, int y2, short int line_color);
-void drawSmallChar(int x, int y, char c, short int color);
-void drawSmallText(int x, int y, char* text, short int color);
-void drawMediumChar(int x, int y, char c, short int color);
-void drawMediumText(int x, int y, char* text, short int color);
-void drawLargeChar(int x, int y, char c, short int color);
-void drawLargeText(int x, int y, char* text, short int color);
-
 // MAIN ---------------------------------------------------
 
 int main(void) {
@@ -118,6 +105,13 @@ int main(void) {
 
   clearScreen();
 
+  drawBackground();
+  drawResetScreen();
+
+  return 0;
+}
+
+void drawBackground() {
   // Top Panel
   drawRectangle(0, 0, 319, 30, COLORS[4]);
   drawBorder(0, 0, 319, 30, COLORS[1]);
@@ -150,17 +144,6 @@ int main(void) {
   drawRectangle(3, 210, 42, 235, COLORS[8]);
   drawBorder(3, 210, 42, 235, COLORS[1]);
 
-  // Random rectangles
-  int randomY = rand() % 120 + 50;
-  int starting_x = 50;
-  int dx = 17;
-  for (int rect_num = 0; rect_num <= 13; rect_num++) {
-    drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
-    drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
-    starting_x = starting_x + dx + 2;
-    randomY = rand() % 120 + 50;
-  }
-
   // Draw text on the screen
   drawLargeText(130, 14, "MK SORTER", COLORS[1]);
   drawSmallText(270, 20, "ECE PROJECT", COLORS[1]);
@@ -175,8 +158,19 @@ int main(void) {
   drawSmallText(7, 133, "SORT", COLORS[0]);
   drawMediumText(9, 192, "RESET", COLORS[0]);
   drawMediumText(17, 220, "GO", COLORS[0]);
+}
 
-  return 0;
+void drawResetScreen() {
+  // Random rectangles
+  int randomY = rand() % 120 + 50;
+  int starting_x = 50;
+  int dx = 17;
+  for (int rect_num = 0; rect_num <= 13; rect_num++) {
+    drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
+    drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
+    starting_x = starting_x + dx + 2;
+    randomY = rand() % 120 + 50;
+  }
 }
 
 // Function that draws white pixels on every pixel to "clear" the screen
