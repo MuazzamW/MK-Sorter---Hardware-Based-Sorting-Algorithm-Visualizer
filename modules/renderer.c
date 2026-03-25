@@ -97,20 +97,6 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
-// MAIN ---------------------------------------------------
-
-int main(void) {
-  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;  // Front buffer
-  PIXEL_BUFFER_START = (volatile short int*)(*pixel_ctrl_ptr);
-
-  clearScreen();
-
-  drawBackground();
-  drawResetScreen();
-
-  return 0;
-}
-
 void drawBackground() {
   // Top Panel
   drawRectangle(0, 0, 319, 30, COLORS[4]);
@@ -180,6 +166,18 @@ void clearScreen() {
   for (int y = 0; y <= 239; y++) {
     // Second for loop: loop through horizontal pixels
     for (int x = 0; x <= 319; x++) {
+      // Color each pixel white
+      plotPixel(x, y, COLORS[2]);
+    }
+  }
+}
+
+// Function that draws the background color only on the background portion of
+// the screen
+void clearBackground() {
+  for (int y = 30; y <= 239; y++) {
+    // Second for loop: loop through horizontal pixels
+    for (int x = 45; x <= 319; x++) {
       // Color each pixel white
       plotPixel(x, y, COLORS[2]);
     }

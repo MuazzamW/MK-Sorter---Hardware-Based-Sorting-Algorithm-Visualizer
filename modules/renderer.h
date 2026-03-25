@@ -14,5 +14,6 @@ void drawLargeChar(int x, int y, char c, short int color);
 void drawLargeText(int x, int y, char* text, short int color);
 void drawBackground();
 void drawResetScreen();
+void clearBackground();
 
 #endif
