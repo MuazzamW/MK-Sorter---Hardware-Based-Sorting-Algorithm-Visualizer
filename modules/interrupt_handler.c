@@ -7,19 +7,9 @@
 static void handler(void) __attribute__ ((interrupt("machine")));
 void set_interval_timer(void);
 void interval_timer_ISR(void);
-void mouse_input_ISR();
 
 //MMIO POINTERS
 volatile int * timer_ptr = (int *) TIMER_BASE;
-volatile int* PS2_ptr = (int*) PS2_BASE;
-
-struct mouse_coordinates{
-    volatile double x;
-    volatile double y;
-};
-
-volatile bool mouseClicked;
-volatile struct mouse_coordinates mouse_location; 
 
 int setup_interrupts(void){
 
