@@ -1,13 +1,15 @@
 // PROGRAM: DISPLAYS STARTING SCREEN
 
+#include "renderer.h"
+
 #include <math.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 // GLOBALS ------------------------------------------------
 
 volatile short int* PIXEL_BUFFER_START;
+volatile int* PIXEL_CTRL_PTR;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
 short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96,
@@ -96,6 +98,47 @@ char LARGE_CHAR[26][8] = {
     {66, 66, 36, 24, 16, 16, 16, 0},     // Y
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
+
+// IMPLEMENTATIONS -----------------------------------------------------
+
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count) {
+  int start_x = 50;
+  int max_x = 319;
+  int spacing = 2;
+
+  int available_width = max_x - start_x;
+  int total_spacing = (n - 1) * spacing;
+
+  int dx = (available_width - total_spacing) / n;
+
+  // Safety: ensure dx is at least 1 pixel
+  if (dx < 1) dx = 1;
+
+  while (1) {
+    for (int step = 0; step < step_count; step++) {
+      int current_x = start_x;
+
+      clearBackground();
+      drawBackground();
+
+      for (int rect = 0; rect < n; rect++) {
+        int value = steps_arr[step][rect];
+
+        drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
+
+        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+        current_x += dx + spacing;
+      }
+
+      // Delay (simple)
+      for (volatile int d = 0; d < 100000; d++);
+
+      waitForSync();
+      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+    }
+  }
+}
 
 void drawBackground() {
   // Top Panel
@@ -330,5 +373,19 @@ void drawLargeText(int x, int y, char* text, short int color) {
     drawLargeChar(x, y, *text, color);
     x += 9;
     text++;
+  }
+}
+
+// Function that swaps the front buffer with the back
+void waitForSync() {
+  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
+  int status;
+  // Initalize the swap cycle - writing 1 into the front buffer
+  *pixel_ctrl_ptr = 1;
+  status = *(pixel_ctrl_ptr + 3);  // Address of the status register
+  // Poll the STATUS bit
+  while ((status & 0x01) != 0) {
+    status = *(pixel_ctrl_ptr + 3);
+    // Exits the loop when STATUS = 0
   }
 }

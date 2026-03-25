@@ -5,16 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// DECLARATIONS ---------------------------------------------------------
-void swap(int* first, int* second);
-void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count);
-int quickSortPartition(int arr[], int low, int high, int n,
-                       int steps_arr[MAX_STEPS][n], int* step_count);
-void quickSortRecursive(int arr[], int low, int high, int n,
-                        int steps_arr[MAX_STEPS][n], int* step_count);
-int getMaxNum(int arr[], int n);
-void countingSortByDigit(int arr[], int n, int exp);
-
 // HELPERS ---------------------------------------------------------------
 
 // Function that swaps two values
@@ -25,7 +15,7 @@ void swap(int* first, int* second) {
 }
 
 // Copies the original array into the 2D array
-void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count) {
+void saveArray(int arr[], int n, int steps_arr[][n], int* step_count) {
   for (int element = 0; element < n; element++) {
     steps_arr[*step_count][element] = arr[element];
   }
@@ -35,8 +25,8 @@ void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count) {
 // Function that takes a section of the array (low to high) and picks the last
 // element as the pivot point Returns the index of the pivot point after
 // everything < pivot is on the left and everything >= pivot is on the right
-int quickSortPartition(int arr[], int low, int high, int n,
-                       int steps_arr[MAX_STEPS][n], int* step_count) {
+int quickSortPartition(int arr[], int low, int high, int n, int steps_arr[][n],
+                       int* step_count) {
   // Last element of the array is the pivot point
   int pivot = arr[high];
 
@@ -70,8 +60,8 @@ int quickSortPartition(int arr[], int low, int high, int n,
 // Quick sort recursive function that takes a portion of the array (low to high)
 // and partions the array into two separate arrays around the pivot point
 // Then it recursively sorts the left and right side
-void quickSortRecursive(int arr[], int low, int high, int n,
-                        int steps_arr[MAX_STEPS][n], int* step_count) {
+void quickSortRecursive(int arr[], int low, int high, int n, int steps_arr[][n],
+                        int* step_count) {
   // Base condition
   if (low < high) {
     // Rearranges the subarray and places the pivot in its final position
@@ -134,8 +124,8 @@ void countingSortByDigit(int arr[], int n, int exp) {
 // step sorted using bubble sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void bubbleSort(int original_arr[], int num_size,
-                int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void bubbleSort(int original_arr[], int num_size, int steps_arr[][num_size],
+                int* step_count) {
   int inner_loop;
   int outer_loop;
   bool swapped;
@@ -171,8 +161,8 @@ void bubbleSort(int original_arr[], int num_size,
 // step sorted using insertion
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void insertionSort(int original_arr[], int num_size,
-                   int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void insertionSort(int original_arr[], int num_size, int steps_arr[][num_size],
+                   int* step_count) {
   int inner_loop;
   int outer_loop;
   int key;
@@ -214,8 +204,8 @@ void insertionSort(int original_arr[], int num_size,
 // step sorted using raxdix sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void radixSort(int original_arr[], int num_size,
-               int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void radixSort(int original_arr[], int num_size, int steps_arr[][num_size],
+               int* step_count) {
   // Copy the original array
   *step_count = 0;
   saveArray(original_arr, num_size, steps_arr, step_count);
@@ -236,8 +226,8 @@ void radixSort(int original_arr[], int num_size,
 // step sorted using quick sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void quickSort(int original_arr[], int num_size,
-               int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void quickSort(int original_arr[], int num_size, int steps_arr[][num_size],
+               int* step_count) {
   // First, copy the original array as the first array in the list
   *step_count = 0;
   saveArray(original_arr, num_size, steps_arr, step_count);

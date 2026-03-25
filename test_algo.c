@@ -8,6 +8,7 @@
 // GLOBALS -------------------------------------------------------
 
 volatile short int* PIXEL_BUFFER_START;
+volatile int* PIXEL_CTRL_PTR;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
 short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96,
@@ -116,102 +117,108 @@ void drawLargeText(int x, int y, char* text, short int color);
 void drawBackground();
 void drawResetScreen();
 void clearBackground();
+void waitForSync();
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count);
 
-void bubbleSort(int arr[], int n, int steps_arr[MAX_STEPS][MAX_SIZE],
-                int* step_count);
-void insertionSort(int arr[], int n, int steps_arr[MAX_STEPS][MAX_SIZE],
-                   int* step_count);
-void radixSort(int arr[], int n, int steps_arr[MAX_STEPS][MAX_SIZE],
-               int* step_count);
-void quickSort(int arr[], int n, int steps_arr[MAX_STEPS][MAX_SIZE],
-               int* step_count);
+void bubbleSort(int arr[], int n, int steps_arr[][n], int* step_count);
+void insertionSort(int arr[], int n, int steps_arr[][n], int* step_count);
+void radixSort(int arr[], int n, int steps_arr[][n], int* step_count);
+void quickSort(int arr[], int n, int steps_arr[][n], int* step_count);
 void swap(int* first, int* second);
-void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count);
-int quickSortPartition(int arr[], int low, int high, int n,
-                       int steps_arr[MAX_STEPS][n], int* step_count);
-void quickSortRecursive(int arr[], int low, int high, int n,
-                        int steps_arr[MAX_STEPS][n], int* step_count);
+void saveArray(int arr[], int n, int steps_arr[][n], int* step_count);
+int quickSortPartition(int arr[], int low, int high, int n, int steps_arr[][n],
+                       int* step_count);
+void quickSortRecursive(int arr[], int low, int high, int n, int steps_arr[][n],
+                        int* step_count);
 int getMaxNum(int arr[], int n);
 void countingSortByDigit(int arr[], int n, int exp);
-
-void waitForSync();
 
 // MAIN ----------------------------------------------------------
 
 int main(void) {
-  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
-  // declare other variables(not shown)
-  // initialize location and direction of rectangles(not shown)
-
-  /* set front pixel buffer to Buffer 1 */
-  *(pixel_ctrl_ptr + 1) =
+  PIXEL_CTRL_PTR = (int*)0xFF203020;
+  *(PIXEL_CTRL_PTR + 1) =
       (int)&BUFFER1;  // first store the address in the  back buffer
-  /* now, swap the front/back buffers, to set the front buffer location */
   waitForSync();
-  /* initialize a pointer to the pixel buffer, used by drawing functions */
-  PIXEL_BUFFER_START = (volatile short int*)(*pixel_ctrl_ptr);
-  clearScreen();  // pixel_buffer_start points to the pixel buffer
-
-  /* set back pixel buffer to Buffer 2 */
-  *(pixel_ctrl_ptr + 1) = (int)&BUFFER2;
-  PIXEL_BUFFER_START = (volatile short int*)(*(
-      pixel_ctrl_ptr + 1));  // we draw on the back buffer
+  PIXEL_BUFFER_START = (volatile short int*)(*PIXEL_CTRL_PTR);
+  clearScreen();
+  *(PIXEL_CTRL_PTR + 1) = (int)&BUFFER2;
+  PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
 
   clearScreen();
   drawBackground();
-  // drawResetScreen();
+  drawResetScreen();
 
-  // Define an array to display
-  int arr[13];
-  int sorted_arr[100][100];
-  // Seed the random number generator
-  srand(time(NULL));
-  // Fill array with random numbers from 100 to 150
-  for (int i = 0; i <= 13; i++) {
-    arr[i] = (rand() % 51) + 100;  // 100–150 inclusive
-  }
-  int steps = 0;
-  // Sort it using bubble sort
-  bubbleSort(arr, 13, sorted_arr, &steps);
+  // waitForSync();
+  // PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
 
-  while (1) {
-    for (int i = 0; i <= steps; i++) {
-      int starting_x = 50;
-      int dx = 17;
-      clearBackground();
-      drawBackground();
-      for (int rect_num = 0; rect_num <= 13; rect_num++) {
-        drawRectangle(starting_x, sorted_arr[i][rect_num], starting_x + dx, 239,
-                      COLORS[5]);
-        drawBorder(starting_x, sorted_arr[i][rect_num], starting_x + dx, 239,
-                   COLORS[1]);
-        starting_x = starting_x + dx + 2;
-      }
-      for (int i = 0; i <= 100000; i++) {
-        continue;
-      }
-      waitForSync();
-      PIXEL_BUFFER_START = *(pixel_ctrl_ptr + 1);  // new back buffer
-    }
-  }
+  int test_arr[10] = {105, 70, 67, 99, 111, 178, 84, 99, 114, 100};
+  int steps[21][10] = {
+      {105, 70, 67, 99, 111, 178, 84, 99, 114, 100},
+      {70, 105, 67, 99, 111, 178, 84, 99, 114, 100},
+      {70, 67, 105, 99, 111, 178, 84, 99, 114, 100},
+      {70, 67, 99, 105, 111, 178, 84, 99, 114, 100},
+      {70, 67, 99, 105, 111, 84, 178, 99, 114, 100},
+      {70, 67, 99, 105, 111, 84, 99, 178, 114, 100},
+      {70, 67, 99, 105, 111, 84, 99, 114, 178, 100},
+      {70, 67, 99, 105, 111, 84, 99, 114, 100, 178},
+      {70, 67, 99, 105, 84, 111, 99, 114, 100, 178},
+      {70, 67, 99, 105, 84, 99, 111, 114, 100, 178},
+      {70, 67, 99, 105, 84, 99, 111, 100, 114, 178},
+      {70, 67, 99, 84, 105, 99, 111, 100, 114, 178},
+      {70, 67, 99, 84, 99, 105, 111, 100, 114, 178},
+      {70, 67, 99, 84, 99, 105, 100, 111, 114, 178},
+      {70, 67, 84, 99, 99, 105, 100, 111, 114, 178},
+      {70, 67, 84, 99, 99, 100, 105, 111, 114, 178},
+      {67, 70, 84, 99, 99, 100, 105, 111, 114, 178},
+  };
+  int num_steps = 17;
+
+  drawSortSteps(test_arr, 10, steps, num_steps);
+
   return 0;
 }
 
-// Function that swaps the front buffer with the back
-void waitForSync() {
-  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
-  int status;
-  // Initalize the swap cycle - writing 1 into the front buffer
-  *pixel_ctrl_ptr = 1;
-  status = *(pixel_ctrl_ptr + 3);  // Address of the status register
-  // Poll the STATUS bit
-  while ((status & 0x01) != 0) {
-    status = *(pixel_ctrl_ptr + 3);
-    // Exits the loop when STATUS = 0
+// ===========================================================================
+
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count) {
+  int start_x = 50;
+  int max_x = 319;
+  int spacing = 2;
+
+  int available_width = max_x - start_x;
+  int total_spacing = (n - 1) * spacing;
+
+  int dx = (available_width - total_spacing) / n;
+
+  // Safety: ensure dx is at least 1 pixel
+  if (dx < 1) dx = 1;
+
+  while (1) {
+    for (int step = 0; step < step_count; step++) {
+      int current_x = start_x;
+
+      clearBackground();
+      drawBackground();
+
+      for (int rect = 0; rect < n; rect++) {
+        int value = steps_arr[step][rect];
+
+        drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
+
+        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+        current_x += dx + spacing;
+      }
+
+      // Delay (simple)
+      for (volatile int d = 0; d < 100000; d++);
+
+      waitForSync();
+      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+    }
   }
 }
-
-// ===========================================================================
 
 void drawBackground() {
   // Top Panel
@@ -449,7 +456,21 @@ void drawLargeText(int x, int y, char* text, short int color) {
   }
 }
 
-// =======================================================================
+// Function that swaps the front buffer with the back
+void waitForSync() {
+  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
+  int status;
+  // Initalize the swap cycle - writing 1 into the front buffer
+  *pixel_ctrl_ptr = 1;
+  status = *(pixel_ctrl_ptr + 3);  // Address of the status register
+  // Poll the STATUS bit
+  while ((status & 0x01) != 0) {
+    status = *(pixel_ctrl_ptr + 3);
+    // Exits the loop when STATUS = 0
+  }
+}
+
+// ===============================================================
 
 // Function that swaps two values
 void swap(int* first, int* second) {
@@ -459,7 +480,7 @@ void swap(int* first, int* second) {
 }
 
 // Copies the original array into the 2D array
-void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count) {
+void saveArray(int arr[], int n, int steps_arr[][n], int* step_count) {
   for (int element = 0; element < n; element++) {
     steps_arr[*step_count][element] = arr[element];
   }
@@ -469,8 +490,8 @@ void saveArray(int arr[], int n, int steps_arr[MAX_STEPS][n], int* step_count) {
 // Function that takes a section of the array (low to high) and picks the last
 // element as the pivot point Returns the index of the pivot point after
 // everything < pivot is on the left and everything >= pivot is on the right
-int quickSortPartition(int arr[], int low, int high, int n,
-                       int steps_arr[MAX_STEPS][n], int* step_count) {
+int quickSortPartition(int arr[], int low, int high, int n, int steps_arr[][n],
+                       int* step_count) {
   // Last element of the array is the pivot point
   int pivot = arr[high];
 
@@ -504,8 +525,8 @@ int quickSortPartition(int arr[], int low, int high, int n,
 // Quick sort recursive function that takes a portion of the array (low to high)
 // and partions the array into two separate arrays around the pivot point
 // Then it recursively sorts the left and right side
-void quickSortRecursive(int arr[], int low, int high, int n,
-                        int steps_arr[MAX_STEPS][n], int* step_count) {
+void quickSortRecursive(int arr[], int low, int high, int n, int steps_arr[][n],
+                        int* step_count) {
   // Base condition
   if (low < high) {
     // Rearranges the subarray and places the pivot in its final position
@@ -568,8 +589,8 @@ void countingSortByDigit(int arr[], int n, int exp) {
 // step sorted using bubble sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void bubbleSort(int original_arr[], int num_size,
-                int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void bubbleSort(int original_arr[], int num_size, int steps_arr[][num_size],
+                int* step_count) {
   int inner_loop;
   int outer_loop;
   bool swapped;
@@ -605,8 +626,8 @@ void bubbleSort(int original_arr[], int num_size,
 // step sorted using insertion
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void insertionSort(int original_arr[], int num_size,
-                   int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void insertionSort(int original_arr[], int num_size, int steps_arr[][num_size],
+                   int* step_count) {
   int inner_loop;
   int outer_loop;
   int key;
@@ -648,8 +669,8 @@ void insertionSort(int original_arr[], int num_size,
 // step sorted using raxdix sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void radixSort(int original_arr[], int num_size,
-               int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void radixSort(int original_arr[], int num_size, int steps_arr[][num_size],
+               int* step_count) {
   // Copy the original array
   *step_count = 0;
   saveArray(original_arr, num_size, steps_arr, step_count);
@@ -670,8 +691,8 @@ void radixSort(int original_arr[], int num_size,
 // step sorted using quick sort
 // Inputs: the original array, the number of elements in the array, the 2D array
 // being returned, the number of swaps it takes to sort the array
-void quickSort(int original_arr[], int num_size,
-               int steps_arr[MAX_STEPS][num_size], int* step_count) {
+void quickSort(int original_arr[], int num_size, int steps_arr[][num_size],
+               int* step_count) {
   // First, copy the original array as the first array in the list
   *step_count = 0;
   saveArray(original_arr, num_size, steps_arr, step_count);
