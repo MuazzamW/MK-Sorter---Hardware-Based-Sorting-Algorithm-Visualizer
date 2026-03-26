@@ -1,338 +1,135 @@
-// --- Start of renderer.c ---
-// PROGRAM: DISPLAYS STARTING SCREEN
+// --- Start of modules/address_map.h ---
+/*******************************************************************************
+ * This file provides address values that exist in the DE1-SoC Computer
+ ******************************************************************************/
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <math.h>
+#ifndef __SYSTEM_INFO__
+#define __SYSTEM_INFO__
 
-// GLOBALS ------------------------------------------------
-	
-volatile short int *PIXEL_BUFFER_START;
-short int BUFFER1[240][512];
-short int BUFFER2[240][512];
-short int COLORS[7] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96, 0x8D91, 0x6B4D};
-char SMALL_CHAR[26][5] = {
-{2,5,7,5,5}, // A
-{6,5,6,5,6}, // B
-{3,4,4,4,3}, // C
-{6,5,5,5,6}, // D
-{7,4,6,4,7}, // E
-{7,4,6,4,4}, // F
-{3,4,5,5,3}, // G
-{5,5,7,5,5}, // H
-{7,2,2,2,7}, // I
-{1,1,1,5,2}, // J
-{5,5,6,5,5}, // K
-{4,4,4,4,7}, // L
-{5,7,7,5,5}, // M
-{5,7,7,7,5}, // N
-{2,5,5,5,2}, // O
-{6,5,6,4,4}, // P
-{2,5,5,7,3}, // Q
-{6,5,6,5,5}, // R
-{3,4,2,1,6}, // S
-{7,2,2,2,2}, // T
-{5,5,5,5,7}, // U
-{5,5,5,5,2}, // V
-{5,5,7,7,5}, // W
-{5,5,2,5,5}, // X
-{5,5,2,2,2}, // Y
-{7,1,2,4,7}  // Z
-};
-char MEDIUM_CHAR[26][7] = {
-{14,17,17,31,17,17,17}, // A
-{30,17,17,30,17,17,30}, // B
-{14,17,16,16,16,17,14}, // C
-{30,17,17,17,17,17,30}, // D
-{31,16,16,30,16,16,31}, // E
-{31,16,16,30,16,16,16}, // F
-{14,17,16,16,19,17,14}, // G
-{17,17,17,31,17,17,17}, // H
-{14,4,4,4,4,4,14},      // I
-{1,1,1,1,17,17,14},     // J
-{17,18,20,24,20,18,17}, // K
-{16,16,16,16,16,16,31}, // L
-{17,27,21,17,17,17,17}, // M
-{17,25,21,19,17,17,17}, // N
-{14,17,17,17,17,17,14}, // O
-{30,17,17,30,16,16,16}, // P
-{14,17,17,17,21,18,13}, // Q
-{30,17,17,30,20,18,17}, // R
-{15,16,16,14,1,1,30},   // S
-{31,4,4,4,4,4,4},       // T
-{17,17,17,17,17,17,14}, // U
-{17,17,17,17,17,10,4},  // V
-{17,17,17,17,21,27,17}, // W
-{17,17,10,4,10,17,17},  // X
-{17,17,10,4,4,4,4},     // Y
-{31,1,2,4,8,16,31}      // Z
-};
-char LARGE_CHAR[26][8] = {
-{24,36,66,126,66,66,66,0}, // A
-{124,66,66,124,66,66,124,0}, // B
-{60,66,64,64,64,66,60,0}, // C
-{120,68,66,66,66,68,120,0}, // D
-{126,64,64,124,64,64,126,0}, // E
-{126,64,64,124,64,64,64,0}, // F
-{60,66,64,78,66,66,60,0}, // G
-{66,66,66,126,66,66,66,0}, // H
-{60,16,16,16,16,16,60,0}, // I
-{30,4,4,4,68,68,56,0}, // J
-{66,68,72,112,72,68,66,0}, // K
-{64,64,64,64,64,64,126,0}, // L
-{66,102,90,66,66,66,66,0}, // M
-{66,98,82,74,70,66,66,0}, // N
-{60,66,66,66,66,66,60,0}, // O
-{124,66,66,124,64,64,64,0}, // P
-{60,66,66,66,74,68,58,0}, // Q
-{124,66,66,124,72,68,66,0}, // R
-{60,64,64,60,2,2,124,0}, // S
-{126,16,16,16,16,16,16,0}, // T
-{66,66,66,66,66,66,60,0}, // U
-{66,66,66,66,66,36,24,0}, // V
-{66,66,66,90,90,102,66,0}, // W
-{66,36,24,24,24,36,66,0}, // X
-{66,66,36,24,16,16,16,0}, // Y
-{126,4,8,16,32,64,126,0} // Z
-};
+#define BOARD				"DE1-SoC"
 
-// DECLARATIONS -------------------------------------------
+/* Memory */
+#define DDR_BASE			0x40000000
+#define DDR_END				0x7FFFFFFF
+#define A9_ONCHIP_BASE			0xFFFF0000
+#define A9_ONCHIP_END			0xFFFFFFFF
+#define SDRAM_BASE			0x00000000
+#define SDRAM_END			0x03FFFFFF
+#define FPGA_PIXEL_BUF_BASE		0x08000000
+#define FPGA_PIXEL_BUF_END		0x0803FFFF
+#define FPGA_CHAR_BASE			0x09000000
+#define FPGA_CHAR_END			0x09001FFF
 
-void clearScreen();
-void plotPixel(int x, int y, short int line_color);
-void drawLine(int x1, int y1, int x2, int y2, short int line_color);
-void drawRectangle(int x1, int y1, int x2, int y2, short int line_color);
-void drawBorder(int x1, int y1, int x2, int y2, short int line_color);
-void drawSmallChar(int x, int y, char c, short int color);
-void drawSmallText(int x, int y, char *text, short int color);
-void drawMediumChar(int x, int y, char c, short int color);
-void drawMediumText(int x, int y, char *text, short int color);
-void drawLargeChar(int x, int y, char c, short int color);
-void drawLargeText(int x, int y, char *text, short int color);
+/* Cyclone V FPGA devices */
+#define LED_BASE			0xFF200000
+#define LEDR_BASE			0xFF200000
+#define HEX3_HEX0_BASE			0xFF200020
+#define HEX5_HEX4_BASE			0xFF200030
+#define SW_BASE				0xFF200040
+#define KEY_BASE			0xFF200050
+#define JP1_BASE			0xFF200060
+#define JP2_BASE			0xFF200070
+#define PS2_BASE			0xFF200100
+#define PS2_DUAL_BASE			0xFF200108
+#define JTAG_UART_BASE			0xFF201000
+#define IrDA_BASE			0xFF201020
+#define TIMER_BASE			0xFF202000
+#define TIMER_2_BASE			0xFF202020
+#define AV_CONFIG_BASE			0xFF203000
+#define RGB_RESAMPLER_BASE    		0xFF203010
+#define PIXEL_BUF_CTRL_BASE		0xFF203020
+#define CHAR_BUF_CTRL_BASE		0xFF203030
+#define AUDIO_BASE			0xFF203040
+#define VIDEO_IN_BASE			0xFF203060
+#define EDGE_DETECT_CTRL_BASE		0xFF203070
+#define ADC_BASE			0xFF204000
 
-// MAIN ---------------------------------------------------
+/* Cyclone V HPS devices */
+#define HPS_GPIO1_BASE			0xFF709000
+#define I2C0_BASE			0xFFC04000
+#define I2C1_BASE			0xFFC05000
+#define I2C2_BASE			0xFFC06000
+#define I2C3_BASE			0xFFC07000
+#define HPS_TIMER0_BASE			0xFFC08000
+#define HPS_TIMER1_BASE			0xFFC09000
+#define HPS_TIMER2_BASE			0xFFD00000
+#define HPS_TIMER3_BASE			0xFFD01000
+#define FPGA_BRIDGE			0xFFD0501C
 
-int main(void) {
-	volatile int *pixel_ctrl_ptr = (int *)0xFF203020;		// Front buffer
-	PIXEL_BUFFER_START = (volatile short int *)(*pixel_ctrl_ptr);
-	
-	clearScreen();
-	
-	// Side panel and top panel
-	drawRectangle(0, 0, 319, 40, COLORS[4]);
-	drawBorder(0, 0, 319, 40, COLORS[1]);
-	
-	drawRectangle(0, 43, 60, 239, COLORS[3]);
-	drawBorder(0, 43, 60, 239, COLORS[1]);
-	
-	// Buttons
-	drawRectangle(5, 48, 55, 80, COLORS[6]);
-	drawBorder(5, 48, 55, 80, COLORS[1]);
-	drawRectangle(5, 85, 55, 117, COLORS[6]);
-	drawBorder(5, 85, 55, 117, COLORS[1]);
-	
-	// Random rectangles
-	int randomY = rand() % 120 + 50;
-	int starting_x = 68;
-	int dx = 17;
-	for (int rect_num = 0; rect_num <= 12; rect_num++) {
-		drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
-		drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
-		starting_x = starting_x + dx + 2;
-		randomY = rand() % 120 + 50;
-	}
-	
-	// Draw text on the screen
-	drawLargeText(130, 17, "MK SORTER", COLORS[1]);
-	drawSmallText(270, 30, "ECE PROJECT", COLORS[1]);
-	drawSmallText(5, 30, "MUAZZAM W AND KARINA K", COLORS[1]);
-	drawMediumText(10, 55, "BUBBLE", COLORS[0]);
-	drawMediumText(10, 65, "SORT", COLORS[0]);
-	drawMediumText(10, 93, "QUICK", COLORS[0]);
-	drawMediumText(10, 103, "SORT", COLORS[0]);
-	
-	return 0;
+#endif
+
+// --- End of modules/address_map.h ---
+
+// --- Start of modules/interrupt_handler.c ---
+// Stripped local include: #include "address_map.h"
+//#include "interrupt_handler.h"
+
+#define CLOCK_RATE 100000
+#define EXIT_SUCCESS 0
+
+
+#include <stdio.h>
+
+//interrupt handler address
+static void handler(void) __attribute__ ((interrupt("machine")));
+void set_interval_timer(void);
+void interval_timer_ISR(void);
+
+//MMIO POINTERS
+volatile int * timer_ptr = (int *) TIMER_BASE;
+
+int main(void){
+    int mstatus_value = 0x8,mtvec_value, mie_value;
+
+    // disable interrupts
+    __asm__ volatile ("csrc mstatus, %0" :: "r"(mstatus_value));
+
+    //configure external hardware
+    set_interval_timer();
+
+    mstatus_value = 0b1000; // interrupt bit mask
+
+    mtvec_value = (int) &handler; // set trap address
+    __asm__ volatile ("csrw mtvec, %0" :: "r"(mtvec_value));
+    // disable all interrupts that are currently enabled
+    __asm__ volatile ("csrr %0, mie" : "=r"(mie_value));
+    __asm__ volatile ("csrc mie, %0" :: "r"(mie_value));
+
+    mie_value = 0x450000; // KEY, itimer, PS/2
+    // set interrupt enables
+    __asm__ volatile ("csrs mie, %0" :: "r"(mie_value));
+    // enable Nios V interrupts
+    __asm__ volatile ("csrs mstatus, %0" :: "r"(mstatus_value));
+
 }
 
-// Function that draws white pixels on every pixel to "clear" the screen
-void clearScreen() { 
-	// Loop through all the pixels and color them black to "clear" the screen
-	// First for loop: loop through vertical pixels
-	for (int y = 0; y <= 239; y++) {
-		// Second for loop: loop through horizontal pixels
-		for (int x = 0; x <= 319; x++) {
-			// Color each pixel white
-			plotPixel(x, y, COLORS[2]);
-		}
-	}
-}
-
-// Function that plots one pixel in a given color
-void plotPixel(int x, int y, short int line_color) {
-	volatile short int *one_pixel_address;
-	one_pixel_address = PIXEL_BUFFER_START + (y << 9) + x;
-	*one_pixel_address = line_color;
-}
-
-// Function that draws a line from (x1, y1) to (x2, y2)
-void drawLine(int x1, int y1, int x2, int y2, short int line_color) {
-	// First check how steep the line is
-	bool is_steep = false;
-	if (abs(y2 - y1) > abs(x2 - x1)) {
-		is_steep = true;
-	}
-	
-	// Swap the x and y variables if the line is steep
-	if (is_steep) {
-		int temp = x1;
-		x1 = y1;
-		y1 = temp;
-
-		temp = x2;
-		x2 = y2;
-		y2 = temp;
-	}
-
-	if (x1 > x2) {
-		int temp = x1;
-		x1 = x2;
-		x2 = temp;
-
-		temp = y1;
-		y1 = y2;
-		y2 = temp;
-	}
-	
-	// Calculate the horizontal and vertical distances the line is being drawn
-	int delta_x = x2 - x1;
-	int delta_y = abs(y2 - y1);
-	
-	// Error variable to keep track of when the y-coordinate should change
-	int error = -(delta_x / 2);
-	int y = y1;
-	int y_step;
-	
-	// Is the line pointing up or down
-	if (y1 < y2) {
-		y_step = 1;
-	} else {
-		y_step = -1;
-	}
-	
-	// Loop through each x coordinate of the line
-	for (int x = x1; x <= x2; x++) {
-		// If the line is steep, switch the x and y coordinates
-		if (is_steep == true) {
-			plotPixel(y, x, line_color);
-		} else {
-			plotPixel(x, y, line_color);
-		}
-		// Update the error
-		error = error + delta_y;
-		// If the error becomes too large then we are too far from the line
-		// Shift the y coordinate occasionally
-		if (error > 0) {
-			y = y + y_step;
-			error = error - delta_x;
-		}
-	}
-}
-// Function that draws a rectangle
-void drawRectangle(int x1, int y1, int x2, int y2, short int line_color) {
-	// Draw a horizontal line for each y-value
-	for (int y = y1; y <= y2; y++) {
-		drawLine(x1, y, x2, y, line_color);
-	}
-}
-
-// Function that draws a border (empty rectangle)
-void drawBorder(int x1, int y1, int x2, int y2, short int line_color) {
-	drawLine(x1, y1, x2, y1, line_color);
-	drawLine(x2, y1, x2, y2, line_color);
-	drawLine(x1, y1, x1, y2, line_color);
-	drawLine(x1, y2, x2, y2, line_color);
-}
-
-void drawSmallChar(int x, int y, char c, short int color)
-{
-    if (c < 'A' || c > 'Z') return;
-    int index = c - 'A';
-    for (int row = 0; row < 5; row++)
-    {
-        char bits = SMALL_CHAR[index][row];
-        for (int col = 0; col < 3; col++)
-        {
-            if (bits & (1 << (2 - col)))
-            {
-                plotPixel(x + col, y + row, color);
-            }
-        }
+void handler(void){
+    int mcause_value;
+    __asm__ volatile ("csrr %0, mcause" : "=r"(mcause_value));
+    mcause_value = mcause_value & 0x7FFFFFFF;
+    if(mcause_value ==  16){
+        //this is due to the interval timer
+        interval_timer_ISR();
+    }else if(mcause_value == 18){
+        //KEYISR
+    }else if(mcause_value == 22){
+        //mouseISR
     }
 }
 
-void drawSmallText(int x, int y, char *text, short int color)
-{
-    while (*text)
-    {
-        drawSmallChar(x, y, *text, color);
-        x += 4;
-        text++;
-    }
+
+void interval_timer_ISR(){
+    //clear the intterupt
+    *timer_ptr = 0;
+    printf("timer triggered\n");
 }
 
-void drawMediumChar(int x, int y, char c, short int color)
-{
-    if (c < 'A' || c > 'Z') return;
-    int index = c - 'A';
-    for (int row = 0; row < 7; row++)
-    {
-        char bits = MEDIUM_CHAR[index][row];
-        for (int col = 0; col < 5; col++)
-        {
-            if (bits & (1 << (4 - col)))
-            {
-                plotPixel(x + col, y + row, color);
-            }
-        }
-    }
+void set_interval_timer(){
+    int loadValue = CLOCK_RATE;
+    *(timer_ptr + 2) = (loadValue & 0xFFFF);
+    *(timer_ptr + 3) = (loadValue>>16) & 0xFFFF;
+    *(timer_ptr + 1) = 0x7;
 }
 
-void drawMediumText(int x, int y, char *text, short int color)
-{
-    while (*text)
-    {
-        drawMediumChar(x, y, *text, color);
-        x += 6;
-        text++;
-    }
-}
-
-void drawLargeChar(int x, int y, char c, short int color)
-{
-    if (c < 'A' || c > 'Z') return;
-    int index = c - 'A';
-    for (int row = 0; row < 8; row++)
-    {
-        unsigned char bits = LARGE_CHAR[index][row];
-        for (int col = 0; col < 8; col++)
-        {
-            if (bits & (1 << (7 - col)))
-            {
-                plotPixel(x + col, y + row, color);
-            }
-        }
-    }
-}
-
-void drawLargeText(int x, int y, char *text, short int color)
-{
-    while (*text)
-    {
-        drawLargeChar(x, y, *text, color);
-        x += 9;
-        text++;
-    }
-}
-
-// --- End of renderer.c ---
+// --- End of modules/interrupt_handler.c ---
 
