@@ -101,7 +101,8 @@ char LARGE_CHAR[26][8] = {
 
 // IMPLEMENTATIONS -----------------------------------------------------
 
-void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count) {
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
+                   volatile int* SW_ptr) {
   int start_x = 50;
   int max_x = 319;
   int spacing = 2;
@@ -110,33 +111,33 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count) {
   int total_spacing = (n - 1) * spacing;
 
   int dx = (available_width - total_spacing) / n;
-
-  // Safety: ensure dx is at least 1 pixel
   if (dx < 1) dx = 1;
 
-  while (1) {
-    for (int step = 0; step < step_count; step++) {
-      int current_x = start_x;
-
-      clearBackground();
-      drawBackground();
-
-      for (int rect = 0; rect < n; rect++) {
-        int value = steps_arr[step][rect];
-
-        drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
-
-        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
-
-        current_x += dx + spacing;
-      }
-
-      // Delay (simple)
-      for (volatile int d = 0; d < 100000; d++);
-
-      waitForSync();
-      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+  for (int step = 0; step < step_count; step++) {
+    int sw = *SW_ptr;
+    if (sw & (1 << 4)) {
+      printf("Animation interrupted by RESET\n");
+      return;
     }
+
+    int current_x = start_x;
+
+    clearBackground();
+    drawBackground();
+
+    for (int rect = 0; rect < n; rect++) {
+      int value = steps_arr[step][rect];
+
+      drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
+      drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+      current_x += dx + spacing;
+    }
+
+    for (volatile int d = 0; d < 100000; d++);
+
+    waitForSync();
+    PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
   }
 }
 
@@ -190,15 +191,21 @@ void drawBackground() {
 }
 
 void drawResetScreen() {
-  // Random rectangles
-  int randomY = rand() % 120 + 50;
   int starting_x = 50;
   int dx = 17;
-  for (int rect_num = 0; rect_num <= 13; rect_num++) {
-    drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
-    drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
-    starting_x = starting_x + dx + 2;
-    randomY = rand() % 120 + 50;
+
+  // Hardcoded "random-looking" values (range 50–170)
+  int heights[14] = {120, 75, 160, 90, 140, 60, 155,
+                     110, 80, 170, 95, 130, 70, 150};
+
+  // Loop through each rectangle and draw it on screen
+  for (int rect_num = 0; rect_num < 14; rect_num++) {
+    int y = heights[rect_num];
+
+    drawRectangle(starting_x, y, starting_x + dx, 239, COLORS[5]);
+    drawBorder(starting_x, y, starting_x + dx, 239, COLORS[1]);
+
+    starting_x += dx + 2;
   }
 }
 
