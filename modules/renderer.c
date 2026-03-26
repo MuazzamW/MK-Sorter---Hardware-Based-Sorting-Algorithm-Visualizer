@@ -101,19 +101,22 @@ char LARGE_CHAR[26][8] = {
 
 // IMPLEMENTATIONS -----------------------------------------------------
 
+// Function that draws the steps of the 2D array passed to it (the animation
+// part of the whole program)
 void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
                    volatile int* SW_ptr) {
+  // Define starting x-values and spacing between rectangles
   int start_x = 50;
   int max_x = 319;
   int spacing = 2;
-
   int available_width = max_x - start_x;
   int total_spacing = (n - 1) * spacing;
-
   int dx = (available_width - total_spacing) / n;
   if (dx < 1) dx = 1;
 
+  // Loop through each step in the array
   for (int step = 0; step < step_count; step++) {
+    // Check if the RESET button was pressed
     int sw = *SW_ptr;
     if (sw & (1 << 4)) {
       printf("Animation interrupted by RESET\n");
@@ -125,6 +128,8 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
     clearBackground();
     drawBackground();
 
+    // Loop through each rectangle in the current step and display the
+    // rectangles
     for (int rect = 0; rect < n; rect++) {
       int value = steps_arr[step][rect];
 
@@ -134,6 +139,7 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
       current_x += dx + spacing;
     }
 
+    // Wait for a little bit of time before moving to the next step
     for (volatile int d = 0; d < 100000; d++);
 
     waitForSync();
