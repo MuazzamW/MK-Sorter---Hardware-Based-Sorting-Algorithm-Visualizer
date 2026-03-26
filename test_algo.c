@@ -9,6 +9,8 @@
 
 volatile short int* PIXEL_BUFFER_START;
 volatile int* PIXEL_CTRL_PTR;
+volatile int* SW_PTR = (int*)0xFF200040;
+volatile int* KEY_PTR = (int*)0xFF200050;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
 short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96,
@@ -98,7 +100,6 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
-#define MAX_STEPS 1000
 #define MAX_SIZE 1000
 
 // DECLARATIONS -------------------------------------------------
@@ -118,7 +119,8 @@ void drawBackground();
 void drawResetScreen();
 void clearBackground();
 void waitForSync();
-void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count);
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
+                   volatile int* SW_ptr);
 
 void bubbleSort(int arr[], int n, int steps_arr[][n], int* step_count);
 void insertionSort(int arr[], int n, int steps_arr[][n], int* step_count);
@@ -148,75 +150,180 @@ int main(void) {
   clearScreen();
   drawBackground();
   drawResetScreen();
+  waitForSync();
+  PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
 
-  // waitForSync();
-  // PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+  int prev_sw = 0;
+  int selected_sort = -1;
+  int n =
+      25;  // default number of rectangles selected if user forgets to choose
+  bool ready_to_run = false;
+  int arr[MAX_SIZE];
+  int steps_arr[MAX_SIZE][MAX_SIZE];
+  int step_count = 0;
 
-  int test_arr[10] = {105, 70, 67, 99, 111, 178, 84, 99, 114, 100};
-  int steps[21][10] = {
-      {105, 70, 67, 99, 111, 178, 84, 99, 114, 100},
-      {70, 105, 67, 99, 111, 178, 84, 99, 114, 100},
-      {70, 67, 105, 99, 111, 178, 84, 99, 114, 100},
-      {70, 67, 99, 105, 111, 178, 84, 99, 114, 100},
-      {70, 67, 99, 105, 111, 84, 178, 99, 114, 100},
-      {70, 67, 99, 105, 111, 84, 99, 178, 114, 100},
-      {70, 67, 99, 105, 111, 84, 99, 114, 178, 100},
-      {70, 67, 99, 105, 111, 84, 99, 114, 100, 178},
-      {70, 67, 99, 105, 84, 111, 99, 114, 100, 178},
-      {70, 67, 99, 105, 84, 99, 111, 114, 100, 178},
-      {70, 67, 99, 105, 84, 99, 111, 100, 114, 178},
-      {70, 67, 99, 84, 105, 99, 111, 100, 114, 178},
-      {70, 67, 99, 84, 99, 105, 111, 100, 114, 178},
-      {70, 67, 99, 84, 99, 105, 100, 111, 114, 178},
-      {70, 67, 84, 99, 99, 105, 100, 111, 114, 178},
-      {70, 67, 84, 99, 99, 100, 105, 111, 114, 178},
-      {67, 70, 84, 99, 99, 100, 105, 111, 114, 178},
-  };
-  int num_steps = 17;
+  while (1) {
+    int curr_sw = *SW_PTR;
+    int sw_changed = curr_sw & (~prev_sw);
 
-  drawSortSteps(test_arr, 10, steps, num_steps);
+    if (sw_changed & (1 << 0)) {
+      selected_sort = 0;
+      printf("Bubble Sort selected\n");
+    }
+    if (sw_changed & (1 << 1)) {
+      selected_sort = 1;
+      printf("Insertion Sort selected\n");
+    }
+    if (sw_changed & (1 << 2)) {
+      selected_sort = 2;
+      printf("Radix Sort selected\n");
+    }
+    if (sw_changed & (1 << 3)) {
+      selected_sort = 3;
+      printf("Quick Sort selected\n");
+    }
+
+    if (sw_changed & (1 << 4)) {
+      printf("System Reset\n");
+
+      // reset state
+      selected_sort = -1;
+      n = 25;  // default value
+      ready_to_run = false;
+
+      // redraw screen immediately
+      clearScreen();
+      drawBackground();
+      drawResetScreen();
+
+      waitForSync();
+      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+
+      continue;
+    }
+
+    if (sw_changed & (1 << 5)) {
+      // GO
+      if (selected_sort != -1 && n != 0) {
+        ready_to_run = true;
+        printf("GO pressed\n");
+      } else {
+        printf("Select sort and n first\n");
+      }
+    }
+
+    prev_sw = curr_sw;
+    int edgeCap = *(KEY_PTR + 3);
+
+    // KEY 0 -> N = 10
+    if ((edgeCap & 0b0001) != 0) {
+      *(KEY_PTR + 3) = 0b1111;
+      printf("n = 10\n");
+      n = 10;
+    }
+
+    // KEY 1 -> N = 50
+    if ((edgeCap & 0b0010) != 0) {
+      *(KEY_PTR + 3) = 0b1111;
+      printf("n = 25\n");
+      n = 25;
+    }
+
+    // KEY 2 -> N = 100
+    if ((edgeCap & 0b0100) != 0) {
+      *(KEY_PTR + 3) = 0b1111;
+      printf("n = 50\n");
+      n = 50;
+    }
+
+    // KEY 3 -> N = 150
+    if ((edgeCap & 0b1000) != 0) {
+      *(KEY_PTR + 3) = 0b1111;
+      printf("n = 60\n");
+      n = 66;
+    }
+
+    if (ready_to_run == true) {
+      printf("Running sort...\n");
+
+      // Example: initialize array (replace later with random)
+      for (int rect_num = 0; rect_num < n; rect_num++) {
+        int randomY = rand() % 120 + 50;
+        arr[rect_num] = randomY;
+      }
+
+      step_count = 0;
+
+      switch (selected_sort) {
+        case 0:
+          bubbleSort(arr, n, steps_arr, &step_count);
+          break;
+        case 1:
+          insertionSort(arr, n, steps_arr, &step_count);
+          break;
+        case 2:
+          radixSort(arr, n, steps_arr, &step_count);
+          break;
+        case 3:
+          quickSort(arr, n, steps_arr, &step_count);
+          break;
+      }
+
+      drawSortSteps(arr, n, steps_arr, step_count, SW_PTR);
+      ready_to_run = false;
+      n = 25;
+      step_count = 0;
+    }
+  }
 
   return 0;
 }
 
 // ===========================================================================
 
-void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count) {
+// Function that draws the steps of the 2D array passed to it (the animation
+// part of the whole program)
+void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
+                   volatile int* SW_ptr) {
+  // Define starting x-values and spacing between rectangles
   int start_x = 50;
   int max_x = 319;
   int spacing = 2;
-
   int available_width = max_x - start_x;
   int total_spacing = (n - 1) * spacing;
-
   int dx = (available_width - total_spacing) / n;
-
-  // Safety: ensure dx is at least 1 pixel
   if (dx < 1) dx = 1;
 
-  while (1) {
-    for (int step = 0; step < step_count; step++) {
-      int current_x = start_x;
-
-      clearBackground();
-      drawBackground();
-
-      for (int rect = 0; rect < n; rect++) {
-        int value = steps_arr[step][rect];
-
-        drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
-
-        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
-
-        current_x += dx + spacing;
-      }
-
-      // Delay (simple)
-      for (volatile int d = 0; d < 100000; d++);
-
-      waitForSync();
-      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+  // Loop through each step in the array
+  for (int step = 0; step < step_count; step++) {
+    // Check if the RESET button was pressed
+    int sw = *SW_ptr;
+    if (sw & (1 << 4)) {
+      printf("Animation interrupted by RESET\n");
+      return;
     }
+
+    int current_x = start_x;
+
+    clearBackground();
+    drawBackground();
+
+    // Loop through each rectangle in the current step and display the
+    // rectangles
+    for (int rect = 0; rect < n; rect++) {
+      int value = steps_arr[step][rect];
+
+      drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
+      drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+      current_x += dx + spacing;
+    }
+
+    // Wait for a little bit of time before moving to the next step
+    for (volatile int d = 0; d < 100000; d++);
+
+    waitForSync();
+    PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
   }
 }
 
@@ -270,15 +377,21 @@ void drawBackground() {
 }
 
 void drawResetScreen() {
-  // Random rectangles
-  int randomY = rand() % 120 + 50;
   int starting_x = 50;
   int dx = 17;
-  for (int rect_num = 0; rect_num <= 13; rect_num++) {
-    drawRectangle(starting_x, randomY, starting_x + dx, 239, COLORS[5]);
-    drawBorder(starting_x, randomY, starting_x + dx, 239, COLORS[1]);
-    starting_x = starting_x + dx + 2;
-    randomY = rand() % 120 + 50;
+
+  // Hardcoded "random-looking" values (range 50–170)
+  int heights[14] = {120, 75, 160, 90, 140, 60, 155,
+                     110, 80, 170, 95, 130, 70, 150};
+
+  // Loop through each rectangle and draw it on screen
+  for (int rect_num = 0; rect_num < 14; rect_num++) {
+    int y = heights[rect_num];
+
+    drawRectangle(starting_x, y, starting_x + dx, 239, COLORS[5]);
+    drawBorder(starting_x, y, starting_x + dx, 239, COLORS[1]);
+
+    starting_x += dx + 2;
   }
 }
 
