@@ -1,15 +1,20 @@
-INSTALL	:= C:/intelFPGA/QUARTUS_Lite_V23.1
+#INSTALL	:= C:/intelFPGA/QUARTUS_Lite_V23.1
+INSTALL	:= C:\intelFPGA_pro\24.1
 
-MAIN	:= part1.c
-HDRS	:= address_map.h
-SRCS	:= $(MAIN)
+MAIN	:= ../src/main.c
+HDRS	:= ../src/address_map.h ../src/interrupt_handler.h 
+SRCS	:= $(MAIN) ../src/interrupt_handler.c #list any additional sources
 
-SHELL	:= cmd.exe
+# MAIN	:= ../test_algo.c
+# HDRS	:=  
+# SRCS	:= $(MAIN) #list any additional sources
+
+#SHELL	:= cmd.exe
 
 # DE1-SoC
 JTAG_INDEX_SoC	:= 2
 
-# The following variables are set based on the value of the INSTALL variable
+# The following variables are set based on t	he value of the INSTALL variable
 COMPILER		:= $(INSTALL)/fpgacademy/AMP/cygwin64/home/compiler/bin
 BASH			:= $(INSTALL)/fpgacademy/AMP/cygwin64/bin/bash --noprofile -norc -c 
 HW_DE1-SoC		:= "$(INSTALL)/fpgacademy/Computer_Systems/DE1-SoC/DE1-SoC_Computer/niosVg/DE1_SoC_Computer.sof"
