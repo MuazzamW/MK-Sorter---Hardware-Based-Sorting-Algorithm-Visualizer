@@ -1,4 +1,3 @@
-//#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -313,7 +312,15 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
     for (int rect = 0; rect < n; rect++) {
       int value = steps_arr[step][rect];
 
-      drawRectangle(current_x, value, current_x + dx, 239, COLORS[5]);
+      // Every color of rectangle is green
+      short int color = COLORS[5];
+
+      // Rectangle that is changing is in red
+      if (step > 0 && steps_arr[step][rect] != steps_arr[step - 1][rect]) {
+        color = COLORS[7];
+      }
+
+      drawRectangle(current_x, value, current_x + dx, 239, color);
       drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
 
       current_x += dx + spacing;
