@@ -757,7 +757,7 @@ void insertionSort(int original_arr[], int num_size, int steps_arr[][num_size],
   saveArray(original_arr, num_size, steps_arr, step_count);
 
   // Second, start the insertion sort process
-  for (outer_loop = 1; outer_loop < num_size - 1; outer_loop++) {
+  for (outer_loop = 1; outer_loop < num_size; outer_loop++) {
     key = original_arr[outer_loop];
     inner_loop = outer_loop - 1;
 
