@@ -1,6 +1,7 @@
 #include "interrupt_handler.h"
 
 #define CLOCK_RATE 100000000
+#define LOAD_VALUE 5000000
 #define EXIT_SUCCESS 0
 #define VGA_WIDTH 320
 #define VGA_HEIGHT 240
@@ -24,6 +25,9 @@ struct mouse_ptr {
 
 volatile mouse_packet mouse_info;
 volatile bool mouseClicked;
+
+volatile int arrayStep = 0;
+volatile bool currentlyDisplaying = false;
 
 //MMIO POINTERS
 volatile int * timer_ptr = (int *) TIMER_BASE;
@@ -111,7 +115,7 @@ int set_up_interrupt_handler(void){
 
     //configure external hardware
     set_interval_timer();
-    ps2_mouse_init();
+    //ps2_mouse_init();
 
     mstatus_value = 0b1000; // interrupt bit mask
 
@@ -196,11 +200,15 @@ void mouse_handler_ISR(volatile mouse_packet *p){
 void interval_timer_ISR(){
     //clear the intterupt
     *timer_ptr = 0;
+    if(currentlyDisplaying){
+        arrayStep++;
+    }
     //printf("timer triggered\n");
+
 }
 
 void set_interval_timer(){
-    int loadValue = CLOCK_RATE;
+    int loadValue = LOAD_VALUE;
     *(timer_ptr + 2) = (loadValue & 0xFFFF);
     *(timer_ptr + 3) = (loadValue>>16) & 0xFFFF;
     *(timer_ptr + 1) = 0x7;

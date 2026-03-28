@@ -1,16 +1,18 @@
 // PROGRAM: DISPLAYS STARTING SCREEN
 
 #include "renderer.h"
-
+#include "interrupt_handler.h"
+#include "address_map.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
 // GLOBALS ------------------------------------------------
-
-volatile short int* PIXEL_BUFFER_START;
-volatile int* PIXEL_CTRL_PTR;
+volatile int* PIXEL_CTRL_PTR_1 = (int*)PIXEL_BUF_CTRL_BASE;
+volatile short int* PIXEL_BUFFER_START_1 = (volatile short int*)(PIXEL_BUF_CTRL_BASE);
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
+
+
 short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96,
                        0x8D91, 0x6B4D, 0xF800, 0x07E0};
 char SMALL_CHAR[26][5] = {
@@ -100,6 +102,23 @@ char LARGE_CHAR[26][8] = {
 
 // IMPLEMENTATIONS -----------------------------------------------------
 
+void initializeBuffers(void){
+
+  *(PIXEL_CTRL_PTR_1 + 1) =
+      (int)&BUFFER1;  // first store the address in the  back buffer
+  waitForSync();
+  clearScreen();
+  *(PIXEL_CTRL_PTR_1 + 1) = (int)&BUFFER2;
+
+  clearScreen();
+  drawBackground();
+  drawResetScreen();
+  waitForSync();
+
+
+}
+
+
 // Function that draws the steps of the 2D array passed to it (the animation
 // part of the whole program)
 void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
@@ -112,46 +131,91 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
   int total_spacing = (n - 1) * spacing;
   int dx = (available_width - total_spacing) / n;
   if (dx < 1) dx = 1;
+  int sw;
+  int current_x;
+  int currentState = 0;
+  int arrayStepPrev = arrayStep;
 
-  // Loop through each step in the array
-  for (int step = 0; step < step_count; step++) {
-    // Check if the RESET button was pressed
-    int sw = *SW_ptr;
-    if (sw & (1 << 4)) {
-      printf("Animation interrupted by RESET\n");
-      return;
-    }
-
-    int current_x = start_x;
-
-    clearBackground();
-    drawBackground();
-
-    // Loop through each rectangle in the current step and display the
-    // rectangles
-    for (int rect = 0; rect < n; rect++) {
-      int value = steps_arr[step][rect];
-
-      // Every color of rectangle is green
-      short int color = COLORS[5];
-
-      // Rectangle that is changing is in red
-      if (step > 0 && steps_arr[step][rect] != steps_arr[step - 1][rect]) {
-        color = COLORS[7];
+  currentlyDisplaying = true;
+  while(currentState<step_count){
+          // Check if the RESET button was pressed
+      sw = *SW_ptr;
+      if (sw & (1 << 4)) {
+        printf("Animation interrupted by RESET\n");
+        return;
+      }
+      if(arrayStepPrev!=arrayStep){
+        currentState++;
+        arrayStepPrev = arrayStep;
       }
 
-      drawRectangle(current_x, value, current_x + dx, 239, color);
-      drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+      current_x = start_x;
 
-      current_x += dx + spacing;
-    }
+      clearBackground();
+      drawBackground();
 
-    // Wait for a little bit of time before moving to the next step
-    for (volatile int d = 0; d < 100000; d++);
+      // Loop through each rectangle in the current step and display the
+      // rectangles
+      for (int rect = 0; rect < n; rect++) {
+        int value = steps_arr[currentState][rect];
 
-    waitForSync();
-    PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
+        // Every color of rectangle is green
+        short int color = COLORS[5];
+
+        // Rectangle that is changing is in red
+        if (currentState > 0 && steps_arr[currentState][rect] != steps_arr[currentState - 1][rect]) {
+          color = COLORS[7];
+        }
+
+        drawRectangle(current_x, value, current_x + dx, 239, color);
+        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+        current_x += dx + spacing;
+      }
+
+      // Wait for a little bit of time before moving to the next step
+      for (volatile int d = 0; d < 100000; d++);
+
+      waitForSync();
+      PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));      // Check if the RESET button was pressed
+      sw = *SW_ptr;
+      if (sw & (1 << 4)) {
+        printf("Animation interrupted by RESET\n");
+        return;
+      }
+
+      current_x = start_x;
+
+      clearBackground();
+      drawBackground();
+
+      // Loop through each rectangle in the current step and display the
+      // rectangles
+      for (int rect = 0; rect < n; rect++) {
+        int value = steps_arr[currentState][rect];
+
+        // Every color of rectangle is green
+        short int color = COLORS[5];
+
+        // Rectangle that is changing is in red
+        if (currentState > 0 && steps_arr[currentState][rect] != steps_arr[currentState - 1][rect]) {
+          color = COLORS[7];
+        }
+
+        drawRectangle(current_x, value, current_x + dx, 239, color);
+        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+        current_x += dx + spacing;
+      }
+
+      // Wait for a little bit of time before moving to the next step
+      for (volatile int d = 0; d < 100000; d++);
+
+      waitForSync();
+      PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
   }
+  currentlyDisplaying = false;
+  arrayStep = 0;
 }
 
 void drawBackground() {
@@ -250,7 +314,7 @@ void clearBackground() {
 // Function that plots one pixel in a given color
 void plotPixel(int x, int y, short int line_color) {
   volatile short int* one_pixel_address;
-  one_pixel_address = PIXEL_BUFFER_START + (y << 9) + x;
+  one_pixel_address = PIXEL_BUFFER_START_1 + (y << 9) + x;
   *one_pixel_address = line_color;
 }
 
@@ -398,7 +462,7 @@ void drawLargeText(int x, int y, char* text, short int color) {
 
 // Function that swaps the front buffer with the back
 void waitForSync() {
-  volatile int* pixel_ctrl_ptr = (int*)0xFF203020;
+  volatile int* pixel_ctrl_ptr = (int*)PIXEL_BUF_CTRL_BASE;
   int status;
   // Initalize the swap cycle - writing 1 into the front buffer
   *pixel_ctrl_ptr = 1;

@@ -1,3 +1,5 @@
+#ifndef INTERRUPT_HANDLER_H
+#define INTERRUPT_HANDLER_H
 
 #include "address_map.h"
 #include <stdbool.h>
@@ -21,3 +23,7 @@ typedef struct {
 int set_up_interrupt_handler(void);
 mouse_packet get_mouse_packet(void);
 
+extern volatile int arrayStep;
+extern volatile bool currentlyDisplaying;
+
+#endif

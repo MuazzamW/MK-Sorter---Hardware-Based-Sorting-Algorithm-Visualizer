@@ -2,41 +2,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "address_map.h"
-#include "algorithms.h"
-#include "interrupt_handler.h"
-#include "mouse_interface.h"
-#include "renderer.h"
+#include "src/address_map.h"
+#include "src/algorithms.h"
+#include "src/interrupt_handler.h"
+//#include "mouse_interface.h"
+#include "src/renderer.h"
 
 #define MAX_SIZE 1000
 
 // GLOBALS -------------------------------------------------------
 
-volatile short int* PIXEL_BUFFER_START;
-volatile int* PIXEL_CTRL_PTR;
-volatile int* SW_PTR = (int*)0xFF200040;
-volatile int* KEY_PTR = (int*)0xFF200050;
-short int BUFFER1[240][512];
-short int BUFFER2[240][512];
-
+// volatile short int* PIXEL_BUFFER_START_1;
+// volatile int* PIXEL_CTRL_PTR_1;
+volatile int* SW_PTR = (int*)SW_BASE;
+volatile int* KEY_PTR = (int*)KEY_BASE;
 // MAIN ----------------------------------------------------------
 
 int main(void) {
-  PIXEL_CTRL_PTR = (int*)0xFF203020;
-  *(PIXEL_CTRL_PTR + 1) =
-      (int)&BUFFER1;  // first store the address in the  back buffer
-  waitForSync();
-  PIXEL_BUFFER_START = (volatile short int*)(*PIXEL_CTRL_PTR);
-  clearScreen();
-  *(PIXEL_CTRL_PTR + 1) = (int)&BUFFER2;
-  PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
-
-  clearScreen();
-  drawBackground();
-  drawResetScreen();
-  waitForSync();
-  PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
-
+  initializeBuffers();
   int prev_sw = 0;
   int selected_sort = -1;
   int n =
@@ -81,7 +64,6 @@ int main(void) {
       drawResetScreen();
 
       waitForSync();
-      PIXEL_BUFFER_START = (volatile short int*)(*(PIXEL_CTRL_PTR + 1));
 
       continue;
     }

@@ -1,8 +1,18 @@
 INSTALL	:= C:/intelFPGA_pro/24.1
 
-MAIN	:= ../src/main.c
-HDRS	:= ../src/address_map.h ../src/interrupt_handler.h 
-SRCS	:= $(MAIN) ../src/interrupt_handler.c #list any additional sources
+# HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h
+
+# MAIN	:= ../main.c
+# HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h
+# SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c 
+
+# MAIN	:= ../test_algo.c
+# HDRS	:= 
+# SRCS	:= $(MAIN) ../src/interrupt_handler.c
+
+MAIN	:= ../combined_output.c
+HDRS	:= 
+SRCS	:= $(MAIN)
 
 SHELL	:= cmd.exe
 
