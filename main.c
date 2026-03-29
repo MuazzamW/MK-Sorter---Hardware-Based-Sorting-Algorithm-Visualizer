@@ -1,12 +1,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "src/address_map.h"
-#include "src/algorithms.h"
-#include "src/interrupt_handler.h"
+
+// Stripped local include: #include "src/address_map.h"
+// Stripped local include: #include "src/algorithms.h"
+// Stripped local include: #include "src/interrupt_handler.h"
 //#include "mouse_interface.h"
-#include "src/renderer.h"
+// Stripped local include: #include "src/renderer.h"
 
 #define MAX_SIZE 1000
 
@@ -16,17 +17,19 @@
 // volatile int* PIXEL_CTRL_PTR_1;
 volatile int* SW_PTR = (int*)SW_BASE;
 volatile int* KEY_PTR = (int*)KEY_BASE;
+static int arr[MAX_SIZE];
+static int steps_arr[MAX_SIZE][MAX_SIZE];
 // MAIN ----------------------------------------------------------
 
 int main(void) {
+  set_up_interrupt_handler();
   initializeBuffers();
   int prev_sw = 0;
   int selected_sort = -1;
   int n =
       25;  // default number of rectangles selected if user forgets to choose
   bool ready_to_run = false;
-  int arr[MAX_SIZE];
-  int steps_arr[MAX_SIZE][MAX_SIZE];
+
   int step_count = 0;
 
   while (1) {

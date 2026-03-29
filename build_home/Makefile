@@ -2,17 +2,25 @@ INSTALL	:= C:/intelFPGA_pro/24.1
 
 # HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h
 
+#VGA COMPILE
 # MAIN	:= ../main.c
 # HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h
-# SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c 
+# SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c
 
+#MOUSE INTERFACE COMPILE
+MAIN	:= ../src/main.c
+HDRS	:= ../src/interrupt_handler.h
+SRCS	:= $(MAIN) ../src/interrupt_handler.c
+
+#TEST_ALGO COMPILE
 # MAIN	:= ../test_algo.c
 # HDRS	:= 
 # SRCS	:= $(MAIN) ../src/interrupt_handler.c
 
-MAIN	:= ../combined_output.c
-HDRS	:= 
-SRCS	:= $(MAIN)
+#COMBINED OUTPUT COMPILE
+# MAIN	:= ../combined_output.c
+# HDRS	:= 
+# SRCS	:= $(MAIN)
 
 SHELL	:= cmd.exe
 

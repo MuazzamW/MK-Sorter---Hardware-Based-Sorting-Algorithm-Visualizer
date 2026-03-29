@@ -6,9 +6,11 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-// GLOBALS ------------------------------------------------
+#define VGA_PIXEL_HEIGHT 240
+#define VGA_PIXEL_WIDTH 320
+
 volatile int* PIXEL_CTRL_PTR_1 = (int*)PIXEL_BUF_CTRL_BASE;
-volatile short int* PIXEL_BUFFER_START_1 = (volatile short int*)(PIXEL_BUF_CTRL_BASE);
+volatile short int* PIXEL_BUFFER_START_1;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
 
@@ -104,16 +106,21 @@ char LARGE_CHAR[26][8] = {
 
 void initializeBuffers(void){
 
+  PIXEL_BUFFER_START_1 = (volatile short int*)(*PIXEL_CTRL_PTR_1);
+
   *(PIXEL_CTRL_PTR_1 + 1) =
       (int)&BUFFER1;  // first store the address in the  back buffer
   waitForSync();
+  PIXEL_BUFFER_START_1 = (volatile short int*)(*PIXEL_CTRL_PTR_1);
   clearScreen();
   *(PIXEL_CTRL_PTR_1 + 1) = (int)&BUFFER2;
+  PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
 
   clearScreen();
   drawBackground();
   drawResetScreen();
   waitForSync();
+  PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
 
 
 }
@@ -134,7 +141,9 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
   int sw;
   int current_x;
   int currentState = 0;
-  int arrayStepPrev = arrayStep;
+  arrayStep = 0;
+  int arrayStepPrev = 0;
+  currentlyDisplaying = true;
 
   currentlyDisplaying = true;
   while(currentState<step_count){
@@ -142,10 +151,15 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
       sw = *SW_ptr;
       if (sw & (1 << 4)) {
         printf("Animation interrupted by RESET\n");
+        currentlyDisplaying = false;
+        arrayStep = 0;
         return;
       }
       if(arrayStepPrev!=arrayStep){
         currentState++;
+        if (currentState >= step_count) {
+          break;
+        }
         arrayStepPrev = arrayStep;
       }
 
@@ -173,46 +187,8 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
         current_x += dx + spacing;
       }
 
-      // Wait for a little bit of time before moving to the next step
-      for (volatile int d = 0; d < 100000; d++);
-
       waitForSync();
       PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));      // Check if the RESET button was pressed
-      sw = *SW_ptr;
-      if (sw & (1 << 4)) {
-        printf("Animation interrupted by RESET\n");
-        return;
-      }
-
-      current_x = start_x;
-
-      clearBackground();
-      drawBackground();
-
-      // Loop through each rectangle in the current step and display the
-      // rectangles
-      for (int rect = 0; rect < n; rect++) {
-        int value = steps_arr[currentState][rect];
-
-        // Every color of rectangle is green
-        short int color = COLORS[5];
-
-        // Rectangle that is changing is in red
-        if (currentState > 0 && steps_arr[currentState][rect] != steps_arr[currentState - 1][rect]) {
-          color = COLORS[7];
-        }
-
-        drawRectangle(current_x, value, current_x + dx, 239, color);
-        drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
-
-        current_x += dx + spacing;
-      }
-
-      // Wait for a little bit of time before moving to the next step
-      for (volatile int d = 0; d < 100000; d++);
-
-      waitForSync();
-      PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
   }
   currentlyDisplaying = false;
   arrayStep = 0;
@@ -286,29 +262,31 @@ void drawResetScreen() {
   }
 }
 
-// Function that draws white pixels on every pixel to "clear" the screen
+//Function that draws white pixels on every pixel to "clear" the screen
 void clearScreen() {
-  // Loop through all the pixels and color them black to "clear" the screen
-  // First for loop: loop through vertical pixels
-  for (int y = 0; y <= 239; y++) {
-    // Second for loop: loop through horizontal pixels
-    for (int x = 0; x <= 319; x++) {
-      // Color each pixel white
-      plotPixel(x, y, COLORS[2]);
+  volatile short int* grid_pointer;
+
+    for(int y = 0; y<VGA_PIXEL_HEIGHT;y++){
+        grid_pointer = (volatile short int *)(PIXEL_BUFFER_START_1 + (y << 9)); //reset to next row
+        for(int x = 0; x < VGA_PIXEL_WIDTH; x++){
+            *grid_pointer = COLORS[2];
+            grid_pointer++;
+        }
     }
-  }
 }
 
-// Function that draws the background color only on the background portion of
-// the screen
+//Function that draws the background color only on the background portion of
+//the screen
 void clearBackground() {
-  for (int y = 30; y <= 239; y++) {
-    // Second for loop: loop through horizontal pixels
-    for (int x = 45; x <= 319; x++) {
-      // Color each pixel white
-      plotPixel(x, y, COLORS[2]);
+  volatile short int* grid_pointer;
+
+  for(int y = 30; y<VGA_PIXEL_HEIGHT;y++){
+        grid_pointer = (volatile short int *)(PIXEL_BUFFER_START_1 + (y << 9)) + 45; //reset to next row and start at x=45
+        for(int x = 45; x < VGA_PIXEL_WIDTH; x++){
+            *grid_pointer = COLORS[2];
+            grid_pointer++;
+        }
     }
-  }
 }
 
 // Function that plots one pixel in a given color

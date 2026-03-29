@@ -103,6 +103,7 @@ void ps2_mouse_init(void){
 }
 
 int set_up_interrupt_handler(void){
+    //printf("entered interrupt handler\n");
     int mstatus_value, mtvec_value, mie_value;
 
     //set initial mouse location
@@ -115,7 +116,7 @@ int set_up_interrupt_handler(void){
 
     //configure external hardware
     set_interval_timer();
-    //ps2_mouse_init();
+    ps2_mouse_init();
 
     mstatus_value = 0b1000; // interrupt bit mask
 
