@@ -106,10 +106,11 @@ char LARGE_CHAR[26][8] = {
 // IMPLEMENTATIONS -----------------------------------------------------
 
 void drawCursor(int xCoord, int yCoord) {
-    for (int y = 0; y < CURSOR_MOUSE_ICON_HEIGHT; y++) {
-        for (int x = 0; x < CURSOR_MOUSE_ICON_WIDTH; x++) {
+    for (int y = 0; y < KARINA_CURSOR_HEIGHT; y++) {
+        for (int x = 0; x < KARINA_CURSOR_WIDTH; x++) {
+          if(KARINA_CURSOR[y*KARINA_CURSOR_WIDTH+x]==0x0000){continue;}
             plotPixel(xCoord + x, yCoord + y,
-                      CURSOR_ORANGE[y * CURSOR_MOUSE_ICON_WIDTH + x]);
+                      KARINA_CURSOR[y * KARINA_CURSOR_WIDTH + x]);
         }
     }
 }

@@ -11,7 +11,8 @@
 #define MOUSE_PIXELS_PER_COUNT_Y ((double)VGA_HEIGHT / (2.0 * MAX_MOUSE_COUNT))
 #define MOUSE_GAIN_X 0.5
 #define MOUSE_GAIN_Y 0.5
-
+#define PS2_DATA (*(volatile unsigned int *)(PS2_BASE))
+#define PS2_CTRL (*(volatile unsigned int *)(PS2_BASE + 4))
 
 struct mouse_ptr {
 
@@ -62,15 +63,17 @@ static inline void ps2_enable_irq(void) {
     mousep->reField = 0x1;   // RE bit
 }
 
+mouse_packet get_mouse_packet(void){
+    return mouse_info;
+}
+
+//reads unsigned char for movement information and converts it into a signed 9 bit number using the signed bit flags
 static int ps2_decode_delta(unsigned char flags, unsigned char data, int sign_mask) {
     int v = data | ((flags & sign_mask) ? 0x100 : 0);
     if (v & 0x100) v -= 0x200;
     return v;
 }
 
-mouse_packet get_mouse_packet(void){
-    return mouse_info;
-}
 
 void ps2_mouse_init(void){
     printf("entered mouse init\n");
@@ -116,7 +119,7 @@ int set_up_interrupt_handler(void){
 
     //configure external hardware
     set_interval_timer();
-    //ps2_mouse_init();
+    ps2_mouse_init();
 
     mstatus_value = 0b1000; // interrupt bit mask
 
@@ -165,12 +168,23 @@ void mouse_handler_ISR(volatile mouse_packet *p){
         buffer[count++] = byte;
 
         if (count == 3) {
+            unsigned char f = buffer[0]; //flag
+            if (f & 0xC0) {
+                count = 0;
+                return;
+            }
+
             p->flags = buffer[0];
-            p->dx = ps2_decode_delta(buffer[0], buffer[1], 0x10);
-            p->dy = ps2_decode_delta(buffer[0], buffer[2], 0x20);
+            p->dx = ps2_decode_delta(f, buffer[1], 0x10);
+            p->dy = ps2_decode_delta(f, buffer[2], 0x20);
+
+            if (p->dx < -50 || p->dx > 50 || p->dy < -50 || p->dy > 50) {
+                count = 0;
+                return;
+            }
 
             p->x += p->dx*MOUSE_GAIN_X;
-            p->y += p->dy*MOUSE_GAIN_Y; 
+            p->y -= p->dy*MOUSE_GAIN_Y; 
 
             if (p->x < 0) p->x = 0;
             if (p->x > VGA_WIDTH - 1) p->x = VGA_WIDTH - 1;
@@ -183,15 +197,15 @@ void mouse_handler_ISR(volatile mouse_packet *p){
 
             count = 0;
 
-            if (p->leftButtonClicked) {
-                printf("left button clicked: %d\n", p->leftButtonClicked);
-            }
-            if (p->rightButtonClicked) {
-                printf("right button clicked: %d\n", p->rightButtonClicked);
-            }
+            // if (p->leftButtonClicked) {
+            //     printf("left button clicked: %d\n", p->leftButtonClicked);
+            // }
+            // if (p->rightButtonClicked) {
+            //     printf("right button clicked: %d\n", p->rightButtonClicked);
+            // }
 
-            printf("x location %f\n",p->x);
-            printf("y location %f\n",p->y);
+            // printf("x location %d\n",p->x);
+            // printf("y location %d\n",p->y);
 
         }
     }

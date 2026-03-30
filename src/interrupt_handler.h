@@ -9,14 +9,14 @@
 // extern volatile bool mouseClicked;
 
 typedef struct {
-    volatile double dx;
-    volatile double dy;
-    volatile char flags;
+    volatile int dx;
+    volatile int dy;
+    volatile unsigned char flags;
     volatile bool leftButtonClicked;
     volatile bool rightButtonClicked;
 
-    volatile double x;
-    volatile double y;
+    volatile int x;
+    volatile int y;
 
 }mouse_packet;
 

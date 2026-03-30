@@ -7,12 +7,16 @@
 
 int main(void){
 
+    mouse_packet mouseInfo;
+
+
     set_up_interrupt_handler();
     initializeBuffers();
 
     while(1){
         clearScreen();
-        drawCursor(VGA_PIXEL_WIDTH/2, VGA_PIXEL_HEIGHT/2);
+        mouseInfo = get_mouse_packet();
+        drawCursor(mouseInfo.x,mouseInfo.y);
         waitForSync();
     }
 

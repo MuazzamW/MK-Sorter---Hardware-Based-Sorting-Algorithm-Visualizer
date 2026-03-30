@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "src/address_map.h"
+#include "src/renderer.h"
+#include "src/IMAGES.h"
+#include "src/interrupt_handler.h"
+#include "src/algorithms.h"
 
 // Stripped local include: #include "src/address_map.h"
 // Stripped local include: #include "src/algorithms.h"
@@ -22,6 +26,7 @@ static int steps_arr[MAX_SIZE][MAX_SIZE];
 // MAIN ----------------------------------------------------------
 
 int main(void) {
+  mouse_packet mouseInfo;
   set_up_interrupt_handler();
   initializeBuffers();
   int prev_sw = 0;
@@ -65,6 +70,8 @@ int main(void) {
       clearScreen();
       drawBackground();
       drawResetScreen();
+      mouseInfo = get_mouse_packet();
+      drawCursor(mouseInfo.x,mouseInfo.y);
 
       waitForSync();
 
@@ -137,12 +144,16 @@ int main(void) {
           quickSort(arr, n, steps_arr, &step_count);
           break;
       }
-
       drawSortSteps(arr, n, steps_arr, step_count, SW_PTR);
       ready_to_run = false;
       n = 25;
       step_count = 0;
     }
+
+    mouseInfo = get_mouse_packet();
+    drawCursor(mouseInfo.x,mouseInfo.y);
+
+
   }
 
   return 0;
