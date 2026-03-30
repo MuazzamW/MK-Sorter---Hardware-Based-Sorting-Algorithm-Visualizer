@@ -3,6 +3,7 @@
 #include "renderer.h"
 #include "interrupt_handler.h"
 #include "address_map.h"
+#include "IMAGES.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -103,6 +104,15 @@ char LARGE_CHAR[26][8] = {
 };
 
 // IMPLEMENTATIONS -----------------------------------------------------
+
+void drawCursor(int xCoord, int yCoord) {
+    for (int y = 0; y < CURSOR_MOUSE_ICON_HEIGHT; y++) {
+        for (int x = 0; x < CURSOR_MOUSE_ICON_WIDTH; x++) {
+            plotPixel(xCoord + x, yCoord + y,
+                      CURSOR_ORANGE[y * CURSOR_MOUSE_ICON_WIDTH + x]);
+        }
+    }
+}
 
 void initializeBuffers(void){
 
@@ -450,4 +460,7 @@ void waitForSync() {
     status = *(pixel_ctrl_ptr + 3);
     // Exits the loop when STATUS = 0
   }
+
+  PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1+1));
+
 }

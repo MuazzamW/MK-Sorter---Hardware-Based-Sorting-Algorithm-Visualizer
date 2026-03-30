@@ -20,5 +20,6 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
                    volatile int* SW_ptr);
 
 void initializeBuffers(void);
+void drawCursor(int x, int y);
 
 #endif

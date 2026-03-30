@@ -9,8 +9,8 @@ INSTALL	:= C:/intelFPGA_pro/24.1
 
 #MOUSE INTERFACE COMPILE
 MAIN	:= ../src/main.c
-HDRS	:= ../src/interrupt_handler.h
-SRCS	:= $(MAIN) ../src/interrupt_handler.c
+HDRS	:= ../src/interrupt_handler.h ../src/renderer.h
+SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/renderer.c
 
 #TEST_ALGO COMPILE
 # MAIN	:= ../test_algo.c

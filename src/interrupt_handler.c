@@ -116,7 +116,7 @@ int set_up_interrupt_handler(void){
 
     //configure external hardware
     set_interval_timer();
-    ps2_mouse_init();
+    //ps2_mouse_init();
 
     mstatus_value = 0b1000; // interrupt bit mask
 
