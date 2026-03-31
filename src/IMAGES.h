@@ -1,14 +1,23 @@
 #ifndef IMAGES_H
 #define IMAGES_H
 
+/*
+
+This header file deinfes all the Images used in the program, including cursors, all defined as C arrays with their specific parameters defined as well.
+
+*/
+
 #define CURSOR_MOUSE_ICON_HEIGHT 20
 #define CURSOR_MOUSE_ICON_WIDTH 20
 
 #define CURSOR_ORANGE_HEIGHT 10
 #define CURSOR_ORANGE_WIDTH 10
 
-#define KARINA_CURSOR_HEIGHT 24
+#define KARINA_CURSOR_HEIGHT 25
 #define KARINA_CURSOR_WIDTH 20
+#define KARINA_CURSOR_X_OFFSET 12
+
+#define CURSOR_OFFSET_X KARINA_CURSOR_X_OFFSET
 
 // array size is 960
 static const short KARINA_CURSOR[]  = {

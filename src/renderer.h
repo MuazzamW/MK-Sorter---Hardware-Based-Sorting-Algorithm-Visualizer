@@ -1,6 +1,12 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include "UI_ELEMENTS.h"
+
+extern GENERAL_ELEMENT* UI_ELEMENTS[15];
+extern int RENDERING_LAYER;
+extern int UI_ELEMENT_COUNT;
+
 void clearScreen();
 void plotPixel(int x, int y, short int line_color);
 void drawLine(int x1, int y1, int x2, int y2, short int line_color);

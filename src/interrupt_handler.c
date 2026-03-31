@@ -9,8 +9,8 @@
 #define MAX_MOUSE_COUNT 250 //maximum displcement in either x or y direction as +- 250 counts
 #define MOUSE_PIXELS_PER_COUNT_X ((double)VGA_WIDTH / (2.0 * MAX_MOUSE_COUNT))
 #define MOUSE_PIXELS_PER_COUNT_Y ((double)VGA_HEIGHT / (2.0 * MAX_MOUSE_COUNT))
-#define MOUSE_GAIN_X 0.5
-#define MOUSE_GAIN_Y 0.5
+#define MOUSE_GAIN_X 1
+#define MOUSE_GAIN_Y 1
 #define PS2_DATA (*(volatile unsigned int *)(PS2_BASE))
 #define PS2_CTRL (*(volatile unsigned int *)(PS2_BASE + 4))
 

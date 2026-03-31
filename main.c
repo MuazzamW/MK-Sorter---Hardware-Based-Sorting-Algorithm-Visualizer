@@ -6,7 +6,7 @@
 #include "src/IMAGES.h"
 #include "src/interrupt_handler.h"
 #include "src/algorithms.h"
-
+#include "src/UI_ELEMENTS.h"
 // Stripped local include: #include "src/address_map.h"
 // Stripped local include: #include "src/algorithms.h"
 // Stripped local include: #include "src/interrupt_handler.h"
@@ -28,10 +28,18 @@ enum PROGRAM_STATE {
   START_SCREEN,
   MAIN_SCREEN,
   DISPLAYING,
-  RESET 
+  RESET_STATE 
 };
 
-enum PROGRAM_STATE currentState;
+enum PROGRAM_STATE currentState = MAIN_SCREEN;
+
+int prev_sw = 0;
+int selected_sort = -1;
+int n = 25;  // default number of rectangles selected if user forgets to choose
+bool ready_to_run = false;
+bool sortSelected = false;
+bool prevLeft = false;
+int step_count = 0;
 
 // MAIN ----------------------------------------------------------
 
@@ -39,60 +47,61 @@ int main(void) {
   mouse_packet mouseInfo;
   set_up_interrupt_handler();
   initializeBuffers();
-  int prev_sw = 0;
-  int selected_sort = -1;
-  int n = 25;  // default number of rectangles selected if user forgets to choose
-  bool ready_to_run = false;
-  int step_count = 0;
-  currentState = MAIN_SCREEN;
 
   while(1){
     if(currentState == MAIN_SCREEN){
+      //Logic to check if any buttons are clicked and if the program is ready to display an algorithm
+      mouseInfo = get_mouse_packet();
+
+      bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
+
+      //update state of buttons
+      for (int elementIdx = 0; elementIdx < UI_ELEMENT_COUNT; elementIdx++) {
+
+        GENERAL_ELEMENT* element = UI_ELEMENTS[elementIdx];
+        if (element->type != BUTTON) continue;
+
+        buttonElement* button = (buttonElement*)element;
+        //check if the button is being hovered over
+        bool hovered = mouseHover(mouseInfo.x, mouseInfo.y, element);
+        button->isHover = hovered;
+
+        //check if button click was to reset or to initiate GO State
+        if (hovered && clicked_now) {
+          if (button->action == RESET) {
+            currentState = RESET_STATE;
+          } else if (button->action == GO) {
+            if (selected_sort != -1) {
+                //ready_to_run = true;
+                currentState = DISPLAYING;
+            }
+          } else {
+
+            //if neither the GO button nor RESET was selected, then a sorting algorithm button was selected
+            // sort button clicked: clear all other sort selections
+            for (int i = 0; i < UI_ELEMENT_COUNT; i++) {
+                //this logic ensures only one button is clicked at a time
+                GENERAL_ELEMENT* e2 = UI_ELEMENTS[i];
+                if (e2->type != BUTTON) continue;
+                buttonElement* b2 = (buttonElement*)e2;
+                if (b2->action != GO && b2->action != RESET) {
+                    b2->isClicked = false;
+                }
+            }
+
+            button->isClicked = true;
+            selected_sort = button->action;
+            sortSelected = true;
+          }
+        }
+      }
+      prevLeft = mouseInfo.leftButtonClicked;
       clearBackground();
       drawBackground();
       drawResetScreen();
-      mouseInfo = get_mouse_packet();
       drawCursor(mouseInfo.x,mouseInfo.y);
       waitForSync();
 
-      //check to update for next state
-      int curr_sw = *SW_PTR;
-      int sw_changed = curr_sw & (~prev_sw);
-
-      if (sw_changed & (1 << 0)) {
-        selected_sort = 0;
-        printf("Bubble Sort selected\n");
-      }
-      if (sw_changed & (1 << 1)) {
-        selected_sort = 1;
-        printf("Insertion Sort selected\n");
-      }
-      if (sw_changed & (1 << 2)) {
-        selected_sort = 2;
-        printf("Radix Sort selected\n");
-      }
-      if (sw_changed & (1 << 3)) {
-        selected_sort = 3;
-        printf("Quick Sort selected\n");
-      }
-
-      if (sw_changed & (1 << 4)) {
-        currentState = RESET;
-        printf("System Reset\n");
-        continue;
-      }
-
-      if (sw_changed & (1 << 5)) {
-      // GO
-        if (selected_sort != -1 && n != 0) {
-          ready_to_run = true;
-          printf("GO pressed\n");
-        } else {
-          printf("Select sort and n first\n");
-        }
-      }
-
-      prev_sw = curr_sw;
       int edgeCap = *(KEY_PTR + 3);
 
       // KEY 0 -> N = 10
@@ -122,16 +131,21 @@ int main(void) {
         printf("n = 60\n");
         n = 66;
       }
-
-      if(ready_to_run){
-        currentState = DISPLAYING;
-      }
-    }else if(currentState == RESET){
-        // reset state
+    }else if(currentState == RESET_STATE){
+        // RESET_STATE state
         selected_sort = -1;
         n = 25;  // default value
         ready_to_run = false;
+        sortSelected = false;
         currentState = MAIN_SCREEN;
+        //ensure no buttons are highlighted or clicked when reset
+        for(int element = 0; element < UI_ELEMENT_COUNT; element++){
+          if(UI_ELEMENTS[element]->type == BUTTON){
+            buttonElement* button = (buttonElement*)UI_ELEMENTS[element];
+            button->isHover = false;
+            button->isClicked = false;
+          }
+        }
         continue;
     }else if(currentState == DISPLAYING){
       printf("Running sort...\n");
@@ -162,7 +176,7 @@ int main(void) {
       ready_to_run = false;
       n = 25;
       step_count = 0;
-      currentState = RESET;
+      currentState = RESET_STATE;
     }
   }
 

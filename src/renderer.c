@@ -4,7 +4,6 @@
 #include "interrupt_handler.h"
 #include "address_map.h"
 #include "IMAGES.h"
-#include "UI_ELEMENTS.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -105,10 +104,32 @@ char LARGE_CHAR[26][8] = {
 };
 
 //general UI ELEMENTS
-static GENERAL_ELEMENT UI_ELEMENTS[10];
+GENERAL_ELEMENT* UI_ELEMENTS[15];
 
-static char RENDERING_LAYER = 0; //layer to keep count of which ui elements to draw over others
-static char UI_ELEMENT_COUNT = 0;
+int RENDERING_LAYER = 1; //layer to keep count of which ui elements to draw over others
+int UI_ELEMENT_COUNT = 0; //total count of ui elements drawn
+
+//ELEMENTS
+static buttonElement bubbleSortButton;
+static buttonElement insertionSortButton; 
+static buttonElement radixSortButton; 
+static buttonElement quickSortButton;
+static buttonElement resetButton; 
+static buttonElement goButton; 
+
+
+//HELPER FUNCTIONS
+short darkenColor(short color) {
+    int r = (color >> 11) & 0x1F;
+    int g = (color >> 5)  & 0x3F;
+    int b = color & 0x1F;
+
+    r = (r * 7) / 10;  // ~0.7
+    g = (g * 7) / 10;
+    b = (b * 7) / 10;
+
+    return (r << 11) | (g << 5) | b;
+}
 
 // IMPLEMENTATIONS -----------------------------------------------------
 
@@ -135,42 +156,99 @@ void initializeBuffers(void){
   PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
   clearScreen();
 
-
-  
   //change for onnly buttons
-  panelElement panel = {.parent = {.backgroundColour = COLORS[4], .borderColor = COLORS[1],.boundary = {.topLeft = {0,0}, .bottomRight = {319,30}}, .layer = RENDERING_LAYER}};
 
-  //top panel
-  drawRectangle(0, 0, 319, 30, COLORS[4]);
-  drawBorder(0, 0, 319, 30, COLORS[1]);
+  UI_ELEMENT_COUNT = 0;
+  RENDERING_LAYER = 1;
 
-  // Side Panel
-  drawRectangle(0, 32, 45, 239, COLORS[3]);
-  drawBorder(0, 32, 45, 239, COLORS[1]);
 
-  // Bubble sort button
-  drawRectangle(3, 35, 42, 60, COLORS[6]);
-  drawBorder(3, 35, 42, 60, COLORS[1]);
+  //INITIALIZE ALL THE BUTTON ELEMENTS
+  bubbleSortButton = (buttonElement){
+    .action = BUBBLE_SORT,
+    .text = "BUBBLE SORT",
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[6], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,35}, .bottomRight = {42,60}},
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
 
-  // Insertion sort button
-  drawRectangle(3, 63, 42, 87, COLORS[6]);
-  drawBorder(3, 63, 42, 87, COLORS[1]);
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&bubbleSortButton;
 
-  // Radix sort button
-  drawRectangle(3, 90, 42, 115, COLORS[6]);
-  drawBorder(3, 90, 42, 115, COLORS[1]);
+  insertionSortButton = (buttonElement){
+    .action = INSERTION_SORT,
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[6], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,63}, .bottomRight = {42,87}},
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
 
-  // Quick sort button
-  drawRectangle(3, 118, 42, 143, COLORS[6]);
-  drawBorder(3, 118, 42, 143, COLORS[1]);
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&insertionSortButton;
 
-  // Reset Button
-  drawRectangle(3, 182, 42, 207, COLORS[7]);
-  drawBorder(3, 182, 42, 207, COLORS[1]);
+  radixSortButton = (buttonElement){
+    .action = RADIX_SORT,
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[6], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,90}, .bottomRight = {42,115}},
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
 
-  // Go button
-  drawRectangle(3, 210, 42, 235, COLORS[8]);
-  drawBorder(3, 210, 42, 235, COLORS[1]);
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&radixSortButton;
+
+  quickSortButton = (buttonElement){
+    .action = QUICK_SORT,
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[6], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,118}, .bottomRight = {42,143}},
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
+
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&quickSortButton;
+
+  resetButton = (buttonElement){
+    .action = RESET,
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[7], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,182}, .bottomRight = {42,207}},
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
+
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&resetButton;
+
+  goButton = (buttonElement){
+    .action = GO,
+    .isClicked = false,
+    .isHover = false,
+    .parent = {
+      .backgroundColour = COLORS[8], .borderColor = COLORS[1],
+        .boundary = {.topLeft = {3,210}, .bottomRight = {42,235}},
+      .layer = RENDERING_LAYER,
+      .layer = RENDERING_LAYER,
+      .clickable = true,
+      .type = BUTTON
+    }};
+
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&goButton;
+  
 
 }
 
@@ -252,29 +330,26 @@ void drawBackground() {
   drawRectangle(0, 32, 45, 239, COLORS[3]);
   drawBorder(0, 32, 45, 239, COLORS[1]);
 
-  // Bubble sort button
-  drawRectangle(3, 35, 42, 60, COLORS[6]);
-  drawBorder(3, 35, 42, 60, COLORS[1]);
+  //LOOP TO DRAW BUTTONS
 
-  // Insertion sort button
-  drawRectangle(3, 63, 42, 87, COLORS[6]);
-  drawBorder(3, 63, 42, 87, COLORS[1]);
-
-  // Radix sort button
-  drawRectangle(3, 90, 42, 115, COLORS[6]);
-  drawBorder(3, 90, 42, 115, COLORS[1]);
-
-  // Quick sort button
-  drawRectangle(3, 118, 42, 143, COLORS[6]);
-  drawBorder(3, 118, 42, 143, COLORS[1]);
-
-  // Reset Button
-  drawRectangle(3, 182, 42, 207, COLORS[7]);
-  drawBorder(3, 182, 42, 207, COLORS[1]);
-
-  // Go button
-  drawRectangle(3, 210, 42, 235, COLORS[8]);
-  drawBorder(3, 210, 42, 235, COLORS[1]);
+  for(int i = 0; i < RENDERING_LAYER; i++){
+    for(int buttons = 0; buttons < UI_ELEMENT_COUNT; buttons++){
+      GENERAL_ELEMENT* element = UI_ELEMENTS[buttons];
+      //printf("%d %d\n",element->boundary.topLeft.y,element->boundary.bottomRight.y);
+      if(element->type == BUTTON){
+        buttonElement* button = (buttonElement*)element;
+        bounds bound = button->parent.boundary;
+        if(button->isHover || button->isClicked){
+          //printf("darkened button \n");
+          short int darkenedColour = darkenColor(button->parent.backgroundColour);
+          drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, darkenedColour);
+        }else{
+          drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, button->parent.backgroundColour);
+        }
+        drawBorder(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, button->parent.borderColor);
+      }
+    }
+  }
 
   // Draw text on the screen
   drawLargeText(130, 14, "MK SORTER", COLORS[1]);

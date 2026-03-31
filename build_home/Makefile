@@ -5,7 +5,7 @@ INSTALL	:= C:/intelFPGA_pro/24.1
 #MAIN PROGRAM COMPILE
 MAIN	:= ../main.c
 HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h ../src/IMAGES.h
-SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c
+SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c ../src/UI_ELEMENTS.c
 
 #MOUSE INTERFACE COMPILE
 # MAIN	:= ../src/main.c
