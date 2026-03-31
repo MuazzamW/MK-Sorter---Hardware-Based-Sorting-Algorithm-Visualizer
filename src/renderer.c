@@ -4,6 +4,7 @@
 #include "interrupt_handler.h"
 #include "address_map.h"
 #include "IMAGES.h"
+#include "UI_ELEMENTS.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -103,6 +104,12 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
+//general UI ELEMENTS
+static GENERAL_ELEMENT UI_ELEMENTS[10];
+
+static char RENDERING_LAYER = 0; //layer to keep count of which ui elements to draw over others
+static char UI_ELEMENT_COUNT = 0;
+
 // IMPLEMENTATIONS -----------------------------------------------------
 
 void drawCursor(int xCoord, int yCoord) {
@@ -126,13 +133,44 @@ void initializeBuffers(void){
   clearScreen();
   *(PIXEL_CTRL_PTR_1 + 1) = (int)&BUFFER2;
   PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
-
   clearScreen();
-  drawBackground();
-  drawResetScreen();
-  waitForSync();
-  PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
 
+
+  
+  //change for onnly buttons
+  panelElement panel = {.parent = {.backgroundColour = COLORS[4], .borderColor = COLORS[1],.boundary = {.topLeft = {0,0}, .bottomRight = {319,30}}, .layer = RENDERING_LAYER}};
+
+  //top panel
+  drawRectangle(0, 0, 319, 30, COLORS[4]);
+  drawBorder(0, 0, 319, 30, COLORS[1]);
+
+  // Side Panel
+  drawRectangle(0, 32, 45, 239, COLORS[3]);
+  drawBorder(0, 32, 45, 239, COLORS[1]);
+
+  // Bubble sort button
+  drawRectangle(3, 35, 42, 60, COLORS[6]);
+  drawBorder(3, 35, 42, 60, COLORS[1]);
+
+  // Insertion sort button
+  drawRectangle(3, 63, 42, 87, COLORS[6]);
+  drawBorder(3, 63, 42, 87, COLORS[1]);
+
+  // Radix sort button
+  drawRectangle(3, 90, 42, 115, COLORS[6]);
+  drawBorder(3, 90, 42, 115, COLORS[1]);
+
+  // Quick sort button
+  drawRectangle(3, 118, 42, 143, COLORS[6]);
+  drawBorder(3, 118, 42, 143, COLORS[1]);
+
+  // Reset Button
+  drawRectangle(3, 182, 42, 207, COLORS[7]);
+  drawBorder(3, 182, 42, 207, COLORS[1]);
+
+  // Go button
+  drawRectangle(3, 210, 42, 235, COLORS[8]);
+  drawBorder(3, 210, 42, 235, COLORS[1]);
 
 }
 
