@@ -9,6 +9,11 @@
 #define CLOCK_RATE 100000000
 #define LOAD_VALUE 5000000
 
+/*
+
+These structures / variables are public to the main.c file which uses it to draw the mouse every frame
+
+*/
 typedef struct {
     volatile int dx;
     volatile int dy;

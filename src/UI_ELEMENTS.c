@@ -4,6 +4,14 @@
 #include "APP_STATE.h"
 
 
+/*
+
+This file implements the helper functions for the classes which are defined in UI_ELEMENTS.h
+This makes it easy to treat each button as its own object which can be placed wherever
+Also helps check if it is clicked or not
+
+*/
+
 bool shouldBeDrawn(PROGRAM_STATE currentState, GENERAL_ELEMENT* element){
 
     int numStates = sizeof(element->drawingStates)/sizeof(element->drawingStates[0]);
@@ -22,11 +30,6 @@ bool shouldBeDrawn(PROGRAM_STATE currentState, GENERAL_ELEMENT* element){
 //returns in the mouse is hovering over any of the elements in the current rendering layer
 bool mouseHover(int mousex, int mousey,GENERAL_ELEMENT* element){
 
-    // if(RENDERING_LAYER != element->layer){
-    //     return false; //if element is not drawn on the most recent layer, it cannot be hovered over
-    // }
-
-    //printf("mouse hover called\n");
 
     int left   = element->boundary.topLeft.x + CURSOR_OFFSET_X;
     int right  = element->boundary.bottomRight.x;
@@ -39,9 +42,6 @@ bool mouseHover(int mousex, int mousey,GENERAL_ELEMENT* element){
 }
 
 void updateButton(buttonElement* self, mouse_packet* mouseInfo) {
-    // if(!shouldBeDrawn(currentState,(GENERAL_ELEMENT*)self)){
-    //     return;
-    // }
 
     self->isHover = mouseHover(mouseInfo->x, mouseInfo->y, &self->parent);
 
@@ -107,6 +107,8 @@ buttonElement* getClickedButton(mouse_packet* mouseInfo, bool clicked_now) {
     return NULL;
 }
 
+
+//BUTTON CALLBACKS
 void selectBubbleSort(buttonElement* self) {
     selected_sort = BUBBLE_SORT;
 }

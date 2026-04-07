@@ -3,6 +3,14 @@
 
 #include "UI_ELEMENTS.h"
 
+/*
+
+Rendering interface to draw the background and other elements which 
+is called by main
+
+*/
+
+
 extern GENERAL_ELEMENT* UI_ELEMENTS[15];
 extern int RENDERING_LAYER;
 extern int UI_ELEMENT_COUNT;

@@ -11,6 +11,7 @@ There are three specific elements which extent the general element including:
 - Bars (when sorting)
 
 Currently only the buttons are used in the main program but the ultimate goal is to define all elements as individual objects
+Each button has its own callback function which is called when it is "clicked"
 
 */
 
@@ -64,10 +65,14 @@ typedef struct {
 } GENERAL_ELEMENT;
 
 typedef struct buttonElement{
-
+    //every object has a parent object
     GENERAL_ELEMENT parent;
     char* text;
     short int textColour;
+
+    //these three flags indicate the state of each button
+    //isClicked is different than isSelected because the former is true on an edge basis (when the mouse is clicked)
+    //and isSelected remains true after the button has been clicked
     bool isClicked;
     bool isHover;
     bool isSelected;
@@ -77,6 +82,9 @@ typedef struct buttonElement{
 
 }buttonElement;
 
+//initially, it was planned to have everything displayed on the screen as a distinct element, but we did not have
+//enough time to convert the original logic into a more object oriented approach
+//currently, only the buttons function as independent objects
 typedef struct{
 
     GENERAL_ELEMENT parent;

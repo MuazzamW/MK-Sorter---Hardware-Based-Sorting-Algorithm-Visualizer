@@ -16,7 +16,15 @@ volatile short int* PIXEL_BUFFER_START_1;
 short int BUFFER1[240][512];
 short int BUFFER2[240][512];
 
+//arbitrary 8 bit glyph (symbol) which contains the character to draw and the 8 bit bit mask 
+typedef struct {
+    char c;
+    unsigned char rows[8];   // enough for largest font
+} Glyph8;
 
+//BITMAPS for all uppercase and lowercase letters + ascii symbols and numbers 0-9
+//the number of elements in the array corresponds to the amount of rows available to draw this character
+//and the value indicates which of the 8 bits to turn on
 short int COLORS[9] = {0xFFFF, 0x0000, 0xEF5D, 0xC618, 0x8D96,
                        0x8D91, 0x6B4D, 0xF800, 0x07E0};
 char SMALL_CHAR[26][5] = {
@@ -104,11 +112,6 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
-typedef struct {
-    char c;
-    unsigned char rows[8];   // enough for largest font
-} Glyph8;
-
 // ---------------- SMALL FONT (3x5) ----------------
 static const Glyph8 SMALL_EXTRA[] = {
     {'0', {7, 5, 5, 5, 7, 0, 0, 0}},
@@ -178,18 +181,22 @@ static const Glyph8 LARGE_EXTRA[] = {
 
 #define LARGE_EXTRA_COUNT (sizeof(LARGE_EXTRA) / sizeof(LARGE_EXTRA[0]))
 
-//HELPER FUNCTIONS
-
+//Helper functions to get the bitmap of the character c 
 static const unsigned char* getSmallGlyph(char c) {
+    //convert lowercase to uppercase
     if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+
+    //if the character is A-Z, use the original letter array
     if (c >= 'A' && c <= 'Z') return (const unsigned char*)SMALL_CHAR[c - 'A'];
 
+    //otherwise lookup this caracter in the glyph8 map
     for (int i = 0; i < SMALL_EXTRA_COUNT; i++) {
         if (SMALL_EXTRA[i].c == c) return SMALL_EXTRA[i].rows;
     }
     return NULL;
 }
 
+//same logic as above
 static const unsigned char* getMediumGlyph(char c) {
     if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
     if (c >= 'A' && c <= 'Z') return (const unsigned char*)MEDIUM_CHAR[c - 'A'];
@@ -200,6 +207,7 @@ static const unsigned char* getMediumGlyph(char c) {
     return NULL;
 }
 
+//same logic as above
 static const unsigned char* getLargeGlyph(char c) {
     if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
     if (c >= 'A' && c <= 'Z') return (const unsigned char*)LARGE_CHAR[c - 'A'];
@@ -216,7 +224,7 @@ GENERAL_ELEMENT* UI_ELEMENTS[15];
 int RENDERING_LAYER = 1; //layer to keep count of which ui elements to draw over others
 int UI_ELEMENT_COUNT = 0; //total count of ui elements drawn
 
-//ELEMENTS
+//BUTTON ELEMENTS
 static buttonElement bubbleSortButton;
 static buttonElement insertionSortButton; 
 static buttonElement radixSortButton; 
@@ -251,6 +259,7 @@ void drawCursor(int xCoord, int yCoord) {
     }
 }
 
+//called once in main to set up the buffers and all the buttons which are drawn across all the screens
 void initializeBuffers(void){
 
   PIXEL_BUFFER_START_1 = (volatile short int*)(*PIXEL_CTRL_PTR_1);
@@ -263,8 +272,6 @@ void initializeBuffers(void){
   *(PIXEL_CTRL_PTR_1 + 1) = (int)&BUFFER2;
   PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));
   clearScreen();
-
-  //change for onnly buttons
 
   UI_ELEMENT_COUNT = 0;
   RENDERING_LAYER = 1;
@@ -450,16 +457,20 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
 
         current_x += dx + spacing;
       }
+
+      //record the total elapsed time since the algorithm started displaying
       double totalTime = tickRate * (currentState); //in seconds
       char finalText[40];
       sprintf(finalText,"Total Time Taken  = %.2f Seconds", totalTime);
       drawMediumText(110,35,finalText,0x0000);
 
+      //get the mouse location and update its position on the screen
       mouse_packet mouseInfo = get_mouse_packet();
       bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
       updateAllButtons(&mouseInfo);
       buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
       if(clickedButton){
+        //check if the reset button has been clicked. If it has, return since the displaying state is no longer on
         if(clickedButton->action == RESET){
           clearSortSelections();
         }
@@ -480,7 +491,8 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
   }
 
   double totalTime = tickRate * (currentState-1); //in seconds
-
+  
+  //after the algorithm is done displaying, keep drawing the end state until the user manually clicks the reset button
   while(1){
     clearBackground();
     drawBackground();
@@ -577,13 +589,12 @@ void drawBackground() {
   for(int i = 0; i < RENDERING_LAYER; i++){
     for(int buttons = 0; buttons < UI_ELEMENT_COUNT; buttons++){
       GENERAL_ELEMENT* element = UI_ELEMENTS[buttons];
-      //printf("%d %d\n",element->boundary.topLeft.y,element->boundary.bottomRight.y);
       if(element->type == BUTTON ){
         if(!shouldBeDrawn(currentState, element)){continue;}
         buttonElement* button = (buttonElement*)element;
         bounds bound = button->parent.boundary;
         if(button->isHover || button->isSelected){
-          //printf("darkened button \n");
+          //if a button is selected or hovered over, then it is drawn with a darkened colour
           short int darkenedColour = darkenColor(button->parent.backgroundColour);
           drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, darkenedColour);
         }else{
@@ -742,10 +753,12 @@ void drawBorder(int x1, int y1, int x2, int y2, short int line_color) {
   drawLine(x1, y2, x2, y2, line_color);
 }
 
+//draws out the bitmap of the glyph8 which corresponds to that character
 void drawSmallChar(int x, int y, char c, short int color) {
     const unsigned char* glyph = getSmallGlyph(c);
     if (!glyph) return;
 
+    //go through bitmap and draw
     for (int row = 0; row < 5; row++) {
         unsigned char bits = glyph[row];
         for (int col = 0; col < 3; col++) {
@@ -756,6 +769,7 @@ void drawSmallChar(int x, int y, char c, short int color) {
     }
 }
 
+//same logic as above
 void drawMediumChar(int x, int y, char c, short int color) {
     const unsigned char* glyph = getMediumGlyph(c);
     if (!glyph) return;
@@ -770,6 +784,7 @@ void drawMediumChar(int x, int y, char c, short int color) {
     }
 }
 
+//same logic as above
 void drawLargeChar(int x, int y, char c, short int color) {
     const unsigned char* glyph = getLargeGlyph(c);
     if (!glyph) return;
@@ -786,6 +801,8 @@ void drawLargeChar(int x, int y, char c, short int color) {
 
 
 void drawSmallText(int x, int y, char* text, short int color) {
+
+  //while there are no characters left, keep drawing a single character
   while (*text) {
     drawSmallChar(x, y, *text, color);
     x += 4;

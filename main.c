@@ -25,6 +25,7 @@ volatile int* KEY_PTR = (int*)KEY_BASE;
 static int arr[MAX_SIZE];
 static int steps_arr[MAX_SIZE][MAX_SIZE];
 
+//initial starting state of the program
 PROGRAM_STATE currentState = STARTING_SCREEN;
 int selected_sort = -1;
 int numButtonsSelected = 0;
@@ -46,6 +47,7 @@ int main(void) {
   while(1){
     if(currentState == STARTING_SCREEN){
 
+      //first update the mouse
       mouseInfo = get_mouse_packet();
       bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
 
@@ -59,6 +61,7 @@ int main(void) {
         }
       }
 
+      //draw the background and all the buttons
       prevLeft = mouseInfo.leftButtonClicked;
       clearBackground();
       drawStartScreen();
@@ -70,6 +73,7 @@ int main(void) {
       //Logic to check if any buttons are clicked and if the program is ready to display an algorithm
       mouseInfo = get_mouse_packet();
 
+      //logic to check if any of the sort selection buttons have been clicked  
       bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
       updateAllButtons(&mouseInfo);
       buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
@@ -80,14 +84,13 @@ int main(void) {
           case RADIX_SORT:
           case QUICK_SORT:
             clearSortSelections();
-            // clickedButton->isClicked = true;
-            // clickedButton->isSelected = true;
             break;
           default:
             break;
         }
 
         if(clickedButton->onClick){
+          //whenever a button is clicked, perform is callback
           clickedButton->onClick(clickedButton);
         }
 
@@ -109,9 +112,11 @@ int main(void) {
         n = 66;
       }
 
+      //display text indicating the number of bars currently selected to display
       sprintf(barSelectionText,"N = %d",n);
 
       prevLeft = mouseInfo.leftButtonClicked;
+      //draw all the background and ui elements
       clearBackground();
       drawBackground();
       drawResetScreen();
@@ -121,7 +126,7 @@ int main(void) {
       waitForSync();
       
     }else if(currentState == RESET_STATE){
-        // RESET_STATE state
+        // RESET_STATE state clears all the program state variables and returns to main screen
         selected_sort = -1;
         n = 25;  // default value
         step_count = 0;
@@ -139,6 +144,7 @@ int main(void) {
         }
         continue;
     }else if(currentState == DISPLAYING){
+      //intiate displaying phase where the appropriately selected sort algorithm is being displayed
       printf("Running sort...\n");
 
       // Example: initialize array (replace later with random)
@@ -163,6 +169,7 @@ int main(void) {
           quickSort(arr, n, steps_arr, &step_count);
           break;
       }
+      //hand over execution to the drawSortSteps() function
       drawSortSteps(arr, n, steps_arr, step_count, SW_PTR);
       
     }

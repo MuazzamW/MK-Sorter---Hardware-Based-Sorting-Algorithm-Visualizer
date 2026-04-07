@@ -1,5 +1,13 @@
 #include "interrupt_handler.h"
 
+
+/*
+
+This file serves both as the source code to handle interrupts and as an interface for the program to 
+receive mouse data, interval timer data (to correctly clock the displaying sequence at 50ms) and key data
+
+*/
+
 #define EXIT_SUCCESS 0
 #define VGA_WIDTH 320
 #define VGA_HEIGHT 240
@@ -10,6 +18,8 @@
 #define MOUSE_GAIN_X 1
 #define MOUSE_GAIN_Y 1
 
+//mouse information struct which becomes a pointer to the address where the PS/2 mouse is interfaced from
+//this happens through a struct mouse_ptr * cast below.
 struct mouse_ptr {
 
     volatile unsigned char data;
@@ -20,15 +30,21 @@ struct mouse_ptr {
     volatile unsigned short unused;
 };
 
+//internal mouse packet object which is updated every time the mouse sends data via its FIFO
 volatile mouse_packet mouse_info;
 volatile bool mouseClicked;
 
+//arrayStep and currently displaying control the increment of the array index of the sorting algorithm
+//when its displaying. If currentlyDisplaying = false, the interrupt routine simply does not increment arrayStep
+//even though the timer ticks continuously
 volatile int arrayStep = 0;
 volatile bool currentlyDisplaying = false;
 volatile int keyNumber = -1;
 
 //MMIO POINTERS
 volatile int * timer_ptr = (int *) TIMER_BASE;
+
+//cast PS/2 base address to struct mouse_ptr * so that dereferencing is easier
 struct mouse_ptr *const mousep = ((struct mouse_ptr *) PS2_BASE);
 volatile int* key_ptr = (int*) KEY_BASE;
 
@@ -66,7 +82,7 @@ mouse_packet get_mouse_packet(void){
     return mouse_info;
 }
 
-//reads unsigned char for movement information and converts it into a signed 9 bit number using the signed bit flags
+//reads unsigned char for mouse movement information and converts it into a signed 9 bit number using the signed bit flags
 static int ps2_decode_delta(unsigned char flags, unsigned char data, int sign_mask) {
     int v = data | ((flags & sign_mask) ? 0x100 : 0);
     if (v & 0x100) v -= 0x200;
@@ -78,6 +94,8 @@ void ps2_mouse_init(void){
     printf("entered mouse init\n");
     char b;
 
+
+    //protocol to set up the mouse into "streaming" mode and to set the resolution to 1 count/mm for the mouse's internal register
     ps2_write_byte(0xFF); //reset
     b = ps2_wait_byte(); //expect FA
 
@@ -148,8 +166,10 @@ void handler(void){
         //this is due to the interval timer
         interval_timer_ISR();
     }else if(mcause_value == 18){
+        //due to key
         key_ISR();
     }else if(mcause_value == 22){
+        //due to mouse
         mouse_handler_ISR(&mouse_info);
     }
 }
@@ -174,47 +194,44 @@ void mouse_handler_ISR(volatile mouse_packet *p){
             continue;   // wait for a valid first packet byte
         }
 
+        //buffer in the first byte of 3
         buffer[count++] = byte;
 
         if (count == 3) {
-            unsigned char f = buffer[0]; //flag
+            unsigned char f = buffer[0]; //flag is the first byte which holds information such as x and y signed bit as well as overflow
             if (f & 0xC0) {
+                //overflow has occured so do not count this displacement
                 count = 0;
                 return;
             }
 
+            //update the mouse packet with the information
             p->flags = buffer[0];
             p->dx = ps2_decode_delta(f, buffer[1], 0x10);
             p->dy = ps2_decode_delta(f, buffer[2], 0x20);
+
 
             if (p->dx < -50 || p->dx > 50 || p->dy < -50 || p->dy > 50) {
                 count = 0;
                 return;
             }
 
+            //increment the mouse's position based on its displacement from the last position and by the mouse gain
             p->x += p->dx*MOUSE_GAIN_X;
             p->y -= p->dy*MOUSE_GAIN_Y; 
 
+            //ensure mouse is within boundaries of the screen
             if (p->x < 0) p->x = 0;
             if (p->x > VGA_WIDTH - 1) p->x = VGA_WIDTH - 1;
 
             if (p->y < 0) p->y = 0;
             if (p->y > VGA_HEIGHT - 1) p->y = VGA_HEIGHT - 1;
 
+            //update the clicked flags
             p->leftButtonClicked  = (buffer[0] & 0x01) != 0;
             p->rightButtonClicked = (buffer[0] & 0x02) != 0;
 
             count = 0;
-
-            // if (p->leftButtonClicked) {
-            //     printf("left button clicked: %d\n", p->leftButtonClicked);
-            // }
-            // if (p->rightButtonClicked) {
-            //     printf("right button clicked: %d\n", p->rightButtonClicked);
-            // }
-
-            // printf("x location %d\n",p->x);
-            // printf("y location %d\n",p->y);
 
         }
     }
@@ -232,6 +249,7 @@ void interval_timer_ISR(){
 }
 
 void set_interval_timer(){
+    // load the timer with 5 000 000 which equates to 50 ms at a 100 mhz system clock
     int loadValue = LOAD_VALUE;
     *(timer_ptr + 2) = (loadValue & 0xFFFF);
     *(timer_ptr + 3) = (loadValue>>16) & 0xFFFF;
