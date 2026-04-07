@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// extern volatile struct mouse_coordinates mouse_location; 
-// extern volatile bool mouseClicked;
+
+#define CLOCK_RATE 100000000
+#define LOAD_VALUE 5000000
 
 typedef struct {
     volatile int dx;
@@ -25,5 +26,6 @@ mouse_packet get_mouse_packet(void);
 
 extern volatile int arrayStep;
 extern volatile bool currentlyDisplaying;
+extern volatile int keyNumber;
 
 #endif

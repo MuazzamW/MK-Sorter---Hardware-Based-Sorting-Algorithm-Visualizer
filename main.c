@@ -7,6 +7,7 @@
 #include "src/interrupt_handler.h"
 #include "src/algorithms.h"
 #include "src/UI_ELEMENTS.h"
+#include "src/APP_STATE.h"
 // Stripped local include: #include "src/address_map.h"
 // Stripped local include: #include "src/algorithms.h"
 // Stripped local include: #include "src/interrupt_handler.h"
@@ -24,17 +25,11 @@ volatile int* KEY_PTR = (int*)KEY_BASE;
 static int arr[MAX_SIZE];
 static int steps_arr[MAX_SIZE][MAX_SIZE];
 
-enum PROGRAM_STATE { 
-  START_SCREEN,
-  MAIN_SCREEN,
-  DISPLAYING,
-  RESET_STATE 
-};
-
-enum PROGRAM_STATE currentState = MAIN_SCREEN;
+PROGRAM_STATE currentState = STARTING_SCREEN;
+int selected_sort = -1;
+int numButtonsSelected = 0;
 
 int prev_sw = 0;
-int selected_sort = -1;
 int n = 25;  // default number of rectangles selected if user forgets to choose
 bool ready_to_run = false;
 bool sortSelected = false;
@@ -49,92 +44,87 @@ int main(void) {
   initializeBuffers();
 
   while(1){
-    if(currentState == MAIN_SCREEN){
+    if(currentState == STARTING_SCREEN){
+
+      mouseInfo = get_mouse_packet();
+      bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
+
+      updateAllButtons(&mouseInfo);
+      buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
+      if(clickedButton){
+        //printf("button state is %d\n", clickedButton->action);
+        if(clickedButton->onClick){
+          clickedButton->onClick(clickedButton);
+          continue;
+        }
+      }
+
+      prevLeft = mouseInfo.leftButtonClicked;
+      clearBackground();
+      drawStartScreen();
+      drawCursor(mouseInfo.x, mouseInfo.y);
+      waitForSync();
+
+
+    }else if(currentState == MAIN_SCREEN){
       //Logic to check if any buttons are clicked and if the program is ready to display an algorithm
       mouseInfo = get_mouse_packet();
 
       bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
-
-      //update state of buttons
-      for (int elementIdx = 0; elementIdx < UI_ELEMENT_COUNT; elementIdx++) {
-
-        GENERAL_ELEMENT* element = UI_ELEMENTS[elementIdx];
-        if (element->type != BUTTON) continue;
-
-        buttonElement* button = (buttonElement*)element;
-        //check if the button is being hovered over
-        bool hovered = mouseHover(mouseInfo.x, mouseInfo.y, element);
-        button->isHover = hovered;
-
-        //check if button click was to reset or to initiate GO State
-        if (hovered && clicked_now) {
-          if (button->action == RESET) {
-            currentState = RESET_STATE;
-          } else if (button->action == GO) {
-            if (selected_sort != -1) {
-                //ready_to_run = true;
-                currentState = DISPLAYING;
-            }
-          } else {
-
-            //if neither the GO button nor RESET was selected, then a sorting algorithm button was selected
-            // sort button clicked: clear all other sort selections
-            for (int i = 0; i < UI_ELEMENT_COUNT; i++) {
-                //this logic ensures only one button is clicked at a time
-                GENERAL_ELEMENT* e2 = UI_ELEMENTS[i];
-                if (e2->type != BUTTON) continue;
-                buttonElement* b2 = (buttonElement*)e2;
-                if (b2->action != GO && b2->action != RESET) {
-                    b2->isClicked = false;
-                }
-            }
-
-            button->isClicked = true;
-            selected_sort = button->action;
-            sortSelected = true;
-          }
+      updateAllButtons(&mouseInfo);
+      buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
+      if(clickedButton){
+        switch(clickedButton->action){
+          case BUBBLE_SORT:
+          case INSERTION_SORT:
+          case RADIX_SORT:
+          case QUICK_SORT:
+            clearSortSelections();
+            // clickedButton->isClicked = true;
+            // clickedButton->isSelected = true;
+            break;
+          default:
+            break;
         }
+
+        if(clickedButton->onClick){
+          clickedButton->onClick(clickedButton);
+        }
+
       }
+
+      char barSelectionText[20];
+      // KEY 0 -> N = 10
+      if (keyNumber == 1) {
+        //printf("n = 10\n");
+        n = 10;
+      }else if(keyNumber == 2){
+        //printf("n = 25\n");
+        n = 25;
+      }else if(keyNumber == 4){
+        //printf("n = 50\n"); 
+        n = 50;
+      }else if(keyNumber == 8){
+        //printf("n = 60\n");
+        n = 66;
+      }
+
+      sprintf(barSelectionText,"N = %d",n);
+
       prevLeft = mouseInfo.leftButtonClicked;
       clearBackground();
       drawBackground();
       drawResetScreen();
+      drawSmallText(3,150,barSelectionText,0x0000);
+
       drawCursor(mouseInfo.x,mouseInfo.y);
       waitForSync();
-
-      int edgeCap = *(KEY_PTR + 3);
-
-      // KEY 0 -> N = 10
-      if ((edgeCap & 0b0001) != 0) {
-        *(KEY_PTR + 3) = 0b1111;
-        printf("n = 10\n");
-        n = 10;
-      }
-
-      // KEY 1 -> N = 50
-      if ((edgeCap & 0b0010) != 0) {
-        *(KEY_PTR + 3) = 0b1111;
-        printf("n = 25\n");
-        n = 25;
-      }
-
-      // KEY 2 -> N = 100
-      if ((edgeCap & 0b0100) != 0) {
-        *(KEY_PTR + 3) = 0b1111;
-        printf("n = 50\n");
-        n = 50;
-      }
-
-      // KEY 3 -> N = 150
-      if ((edgeCap & 0b1000) != 0) {
-        *(KEY_PTR + 3) = 0b1111;
-        printf("n = 60\n");
-        n = 66;
-      }
+      
     }else if(currentState == RESET_STATE){
         // RESET_STATE state
         selected_sort = -1;
         n = 25;  // default value
+        step_count = 0;
         ready_to_run = false;
         sortSelected = false;
         currentState = MAIN_SCREEN;
@@ -144,6 +134,7 @@ int main(void) {
             buttonElement* button = (buttonElement*)UI_ELEMENTS[element];
             button->isHover = false;
             button->isClicked = false;
+            button->isSelected = false;
           }
         }
         continue;
@@ -173,10 +164,7 @@ int main(void) {
           break;
       }
       drawSortSteps(arr, n, steps_arr, step_count, SW_PTR);
-      ready_to_run = false;
-      n = 25;
-      step_count = 0;
-      currentState = RESET_STATE;
+      
     }
   }
 

@@ -1,7 +1,5 @@
 #include "interrupt_handler.h"
 
-#define CLOCK_RATE 100000000
-#define LOAD_VALUE 5000000
 #define EXIT_SUCCESS 0
 #define VGA_WIDTH 320
 #define VGA_HEIGHT 240
@@ -11,8 +9,6 @@
 #define MOUSE_PIXELS_PER_COUNT_Y ((double)VGA_HEIGHT / (2.0 * MAX_MOUSE_COUNT))
 #define MOUSE_GAIN_X 1
 #define MOUSE_GAIN_Y 1
-#define PS2_DATA (*(volatile unsigned int *)(PS2_BASE))
-#define PS2_CTRL (*(volatile unsigned int *)(PS2_BASE + 4))
 
 struct mouse_ptr {
 
@@ -29,15 +25,18 @@ volatile bool mouseClicked;
 
 volatile int arrayStep = 0;
 volatile bool currentlyDisplaying = false;
+volatile int keyNumber = -1;
 
 //MMIO POINTERS
 volatile int * timer_ptr = (int *) TIMER_BASE;
 struct mouse_ptr *const mousep = ((struct mouse_ptr *) PS2_BASE);
+volatile int* key_ptr = (int*) KEY_BASE;
 
 //interrupt handler address
 static void handler(void) __attribute__ ((interrupt("machine")));
 void set_interval_timer(void);
 void interval_timer_ISR(void);
+void key_ISR(void);
 void mouse_handler_ISR(volatile mouse_packet* p);
 
 
@@ -120,6 +119,8 @@ int set_up_interrupt_handler(void){
     //configure external hardware
     set_interval_timer();
     ps2_mouse_init();
+    *(key_ptr+3) = 0xF;//clear keys
+    *(key_ptr+2) = 0xF; //initialize key interrupts
 
     mstatus_value = 0b1000; // interrupt bit mask
 
@@ -147,10 +148,18 @@ void handler(void){
         //this is due to the interval timer
         interval_timer_ISR();
     }else if(mcause_value == 18){
-        //KEYISR
+        key_ISR();
     }else if(mcause_value == 22){
         mouse_handler_ISR(&mouse_info);
     }
+}
+
+void key_ISR(void){
+    printf("entered edge isr\n");
+
+    int edgeCapture = *(key_ptr+3);
+    *(key_ptr+3) = 0b1111;
+    keyNumber = edgeCapture;
 }
 
 void mouse_handler_ISR(volatile mouse_packet *p){

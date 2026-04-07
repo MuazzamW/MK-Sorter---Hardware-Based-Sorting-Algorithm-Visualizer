@@ -16,6 +16,11 @@ Currently only the buttons are used in the main program but the ultimate goal is
 
 
 #include <stdbool.h>
+#include "interrupt_handler.h"
+#include "APP_STATE.h"
+
+typedef struct buttonElement buttonElement;
+typedef void (*ButtonCallback)(buttonElement* self);
 
 enum ELEMENT_TYPE { 
   PANEL,
@@ -29,7 +34,8 @@ enum BUTTON_ACTION {
   RADIX_SORT,
   QUICK_SORT,
   GO,
-  RESET 
+  RESET,
+  START 
 };
 
 typedef struct {
@@ -52,17 +58,22 @@ typedef struct {
     char layer;
     enum ELEMENT_TYPE type;
     bool clickable;
+    //elements can have up to 10 drawing states
+    PROGRAM_STATE drawingStates[10];
 
 } GENERAL_ELEMENT;
 
-typedef struct{
+typedef struct buttonElement{
 
     GENERAL_ELEMENT parent;
     char* text;
     short int textColour;
     bool isClicked;
     bool isHover;
+    bool isSelected;
+
     enum BUTTON_ACTION action;
+    ButtonCallback onClick;
 
 }buttonElement;
 
@@ -82,6 +93,26 @@ typedef struct{
 
 //returns true if the mouse is hovering anywhere over the element
 bool mouseHover(int mousex, int mousey, GENERAL_ELEMENT* element);
+//void updateButton(buttonElement*self, mouse_packet* mouseInfo);
+void updateAllButtons(mouse_packet* mouseInfo);
+void clearSortSelections(void);
+buttonElement* getClickedButton(mouse_packet* mouseInfo, bool clicked_now);
+bool shouldBeDrawn(PROGRAM_STATE currentState, GENERAL_ELEMENT* element);
+
+//BUTTON CALLBACKS
+void selectBubbleSort(buttonElement* self);
+
+void selectInsertionSort(buttonElement* self);
+
+void selectRadixSort(buttonElement* self);
+
+void selectQuickSort(buttonElement* self);
+
+void goAction(buttonElement* self);
+
+void resetAction(buttonElement* self);
+
+void startProgram(buttonElement* self);
 
 
 #endif

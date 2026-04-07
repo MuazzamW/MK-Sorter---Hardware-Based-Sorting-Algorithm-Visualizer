@@ -6,6 +6,7 @@
 #include "IMAGES.h"
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define VGA_PIXEL_HEIGHT 240
 #define VGA_PIXEL_WIDTH 320
@@ -103,6 +104,112 @@ char LARGE_CHAR[26][8] = {
     {126, 4, 8, 16, 32, 64, 126, 0}      // Z
 };
 
+typedef struct {
+    char c;
+    unsigned char rows[8];   // enough for largest font
+} Glyph8;
+
+// ---------------- SMALL FONT (3x5) ----------------
+static const Glyph8 SMALL_EXTRA[] = {
+    {'0', {7, 5, 5, 5, 7, 0, 0, 0}},
+    {'1', {2, 6, 2, 2, 7, 0, 0, 0}},
+    {'2', {7, 1, 7, 4, 7, 0, 0, 0}},
+    {'3', {7, 1, 7, 1, 7, 0, 0, 0}},
+    {'4', {5, 5, 7, 1, 1, 0, 0, 0}},
+    {'5', {7, 4, 7, 1, 7, 0, 0, 0}},
+    {'6', {7, 4, 7, 5, 7, 0, 0, 0}},
+    {'7', {7, 1, 1, 1, 1, 0, 0, 0}},
+    {'8', {7, 5, 7, 5, 7, 0, 0, 0}},
+    {'9', {7, 5, 7, 1, 7, 0, 0, 0}},
+    {'=', {0, 7, 0, 7, 0, 0, 0, 0}},
+    {'-', {0, 0, 7, 0, 0, 0, 0, 0}},
+    {'+', {0, 2, 7, 2, 0, 0, 0, 0}},
+    {'/', {1, 1, 2, 4, 4, 0, 0, 0}},
+    {':', {0, 2, 0, 2, 0, 0, 0, 0}},
+    {'.', {0, 0, 0, 0, 2, 0, 0, 0}},
+    {' ', {0, 0, 0, 0, 0, 0, 0, 0}},
+};
+
+#define SMALL_EXTRA_COUNT (sizeof(SMALL_EXTRA) / sizeof(SMALL_EXTRA[0]))
+
+// ---------------- MEDIUM FONT (5x7) ----------------
+static const Glyph8 MEDIUM_EXTRA[] = {
+    {'0', {14, 17, 19, 21, 25, 17, 14, 0}},
+    {'1', {4, 12, 4, 4, 4, 4, 14, 0}},
+    {'2', {14, 17, 1, 2, 4, 8, 31, 0}},
+    {'3', {30, 1, 1, 14, 1, 1, 30, 0}},
+    {'4', {2, 6, 10, 18, 31, 2, 2, 0}},
+    {'5', {31, 16, 16, 30, 1, 1, 30, 0}},
+    {'6', {14, 16, 16, 30, 17, 17, 14, 0}},
+    {'7', {31, 1, 2, 4, 8, 8, 8, 0}},
+    {'8', {14, 17, 17, 14, 17, 17, 14, 0}},
+    {'9', {14, 17, 17, 15, 1, 1, 14, 0}},
+    {'=', {0, 31, 0, 31, 0, 0, 0, 0}},
+    {'-', {0, 0, 31, 0, 0, 0, 0, 0}},
+    {'+', {0, 4, 4, 31, 4, 4, 0, 0}},
+    {'/', {1, 2, 4, 8, 16, 0, 0, 0}},
+    {':', {0, 4, 0, 0, 4, 0, 0, 0}},
+    {'.', {0, 0, 0, 0, 0, 12, 12, 0}},
+    {' ', {0, 0, 0, 0, 0, 0, 0, 0}},
+};
+
+#define MEDIUM_EXTRA_COUNT (sizeof(MEDIUM_EXTRA) / sizeof(MEDIUM_EXTRA[0]))
+
+// ---------------- LARGE FONT (8x8) ----------------
+static const Glyph8 LARGE_EXTRA[] = {
+    {'0', {60, 66, 70, 74, 82, 98, 60, 0}},
+    {'1', {24, 40, 8, 8, 8, 8, 62, 0}},
+    {'2', {60, 66, 2, 12, 48, 64, 126, 0}},
+    {'3', {60, 66, 2, 28, 2, 66, 60, 0}},
+    {'4', {8, 24, 40, 72, 126, 8, 8, 0}},
+    {'5', {126, 64, 124, 2, 2, 66, 60, 0}},
+    {'6', {28, 32, 64, 124, 66, 66, 60, 0}},
+    {'7', {126, 2, 4, 8, 16, 16, 16, 0}},
+    {'8', {60, 66, 66, 60, 66, 66, 60, 0}},
+    {'9', {60, 66, 66, 62, 2, 4, 56, 0}},
+    {'=', {0, 126, 0, 126, 0, 0, 0, 0}},
+    {'-', {0, 0, 126, 0, 0, 0, 0, 0}},
+    {'+', {0, 16, 16, 124, 16, 16, 0, 0}},
+    {'/', {2, 4, 8, 16, 32, 64, 0, 0}},
+    {':', {0, 24, 24, 0, 24, 24, 0, 0}},
+    {'.', {0, 0, 0, 0, 0, 24, 24, 0}},
+    {' ', {0, 0, 0, 0, 0, 0, 0, 0}},
+};
+
+#define LARGE_EXTRA_COUNT (sizeof(LARGE_EXTRA) / sizeof(LARGE_EXTRA[0]))
+
+//HELPER FUNCTIONS
+
+static const unsigned char* getSmallGlyph(char c) {
+    if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+    if (c >= 'A' && c <= 'Z') return (const unsigned char*)SMALL_CHAR[c - 'A'];
+
+    for (int i = 0; i < SMALL_EXTRA_COUNT; i++) {
+        if (SMALL_EXTRA[i].c == c) return SMALL_EXTRA[i].rows;
+    }
+    return NULL;
+}
+
+static const unsigned char* getMediumGlyph(char c) {
+    if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+    if (c >= 'A' && c <= 'Z') return (const unsigned char*)MEDIUM_CHAR[c - 'A'];
+
+    for (int i = 0; i < MEDIUM_EXTRA_COUNT; i++) {
+        if (MEDIUM_EXTRA[i].c == c) return MEDIUM_EXTRA[i].rows;
+    }
+    return NULL;
+}
+
+static const unsigned char* getLargeGlyph(char c) {
+    if (c >= 'a' && c <= 'z') c = c - 'a' + 'A';
+    if (c >= 'A' && c <= 'Z') return (const unsigned char*)LARGE_CHAR[c - 'A'];
+
+    for (int i = 0; i < LARGE_EXTRA_COUNT; i++) {
+        if (LARGE_EXTRA[i].c == c) return LARGE_EXTRA[i].rows;
+    }
+    return NULL;
+}
+
 //general UI ELEMENTS
 GENERAL_ELEMENT* UI_ELEMENTS[15];
 
@@ -115,7 +222,8 @@ static buttonElement insertionSortButton;
 static buttonElement radixSortButton; 
 static buttonElement quickSortButton;
 static buttonElement resetButton; 
-static buttonElement goButton; 
+static buttonElement goButton;
+static buttonElement startButton; 
 
 
 //HELPER FUNCTIONS
@@ -168,12 +276,14 @@ void initializeBuffers(void){
     .text = "BUBBLE SORT",
     .isClicked = false,
     .isHover = false,
+    .onClick = selectBubbleSort,
     .parent = {
       .backgroundColour = COLORS[6], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,35}, .bottomRight = {42,60}},
       .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates = {MAIN_SCREEN,DISPLAYING} 
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&bubbleSortButton;
@@ -182,12 +292,14 @@ void initializeBuffers(void){
     .action = INSERTION_SORT,
     .isClicked = false,
     .isHover = false,
+    .onClick = selectInsertionSort,
     .parent = {
       .backgroundColour = COLORS[6], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,63}, .bottomRight = {42,87}},
       .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates = {MAIN_SCREEN,DISPLAYING}
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&insertionSortButton;
@@ -196,12 +308,14 @@ void initializeBuffers(void){
     .action = RADIX_SORT,
     .isClicked = false,
     .isHover = false,
+    .onClick = selectRadixSort,
     .parent = {
       .backgroundColour = COLORS[6], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,90}, .bottomRight = {42,115}},
       .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates = {MAIN_SCREEN,DISPLAYING}
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&radixSortButton;
@@ -210,12 +324,14 @@ void initializeBuffers(void){
     .action = QUICK_SORT,
     .isClicked = false,
     .isHover = false,
+    .onClick = selectQuickSort,
     .parent = {
       .backgroundColour = COLORS[6], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,118}, .bottomRight = {42,143}},
       .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates= {MAIN_SCREEN,DISPLAYING}
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&quickSortButton;
@@ -224,12 +340,14 @@ void initializeBuffers(void){
     .action = RESET,
     .isClicked = false,
     .isHover = false,
+    .onClick = resetAction,
     .parent = {
       .backgroundColour = COLORS[7], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,182}, .bottomRight = {42,207}},
       .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates = {MAIN_SCREEN,DISPLAYING}
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&resetButton;
@@ -238,16 +356,33 @@ void initializeBuffers(void){
     .action = GO,
     .isClicked = false,
     .isHover = false,
+    .onClick = goAction,
     .parent = {
       .backgroundColour = COLORS[8], .borderColor = COLORS[1],
         .boundary = {.topLeft = {3,210}, .bottomRight = {42,235}},
       .layer = RENDERING_LAYER,
-      .layer = RENDERING_LAYER,
       .clickable = true,
-      .type = BUTTON
+      .type = BUTTON,
+      .drawingStates = {MAIN_SCREEN, DISPLAYING}
     }};
 
   UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&goButton;
+
+  startButton = (buttonElement){
+  .action = START,
+  .isClicked = false,
+  .isHover = false,
+  .onClick = startProgram,
+  .parent = {
+    .backgroundColour = COLORS[8], .borderColor = COLORS[1],
+      .boundary = {.topLeft = {3,175}, .bottomRight = {42,200}},
+    .layer = RENDERING_LAYER,
+    .clickable = true,
+    .type = BUTTON,
+    .drawingStates = {STARTING_SCREEN}
+  }};
+
+  UI_ELEMENTS[UI_ELEMENT_COUNT++] = (GENERAL_ELEMENT*)&startButton;
   
 
 }
@@ -259,7 +394,7 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
                    volatile int* SW_ptr) {
   // Define starting x-values and spacing between rectangles
   int start_x = 50;
-  int max_x = 319;
+  int max_x = VGA_PIXEL_WIDTH-1;
   int spacing = 2;
   int available_width = max_x - start_x;
   int total_spacing = (n - 1) * spacing;
@@ -271,6 +406,8 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
   arrayStep = 0;
   int arrayStepPrev = 0;
   currentlyDisplaying = true;
+  bool prevLeft = false;
+  double tickRate = (double)LOAD_VALUE / (double)CLOCK_RATE; //seconds per swap
 
   currentlyDisplaying = true;
   while(currentState<step_count){
@@ -313,12 +450,117 @@ void drawSortSteps(int arr[], int n, int steps_arr[][n], int step_count,
 
         current_x += dx + spacing;
       }
+      double totalTime = tickRate * (currentState); //in seconds
+      char finalText[40];
+      sprintf(finalText,"Total Time Taken  = %.2f Seconds", totalTime);
+      drawMediumText(110,35,finalText,0x0000);
 
+      mouse_packet mouseInfo = get_mouse_packet();
+      bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
+      updateAllButtons(&mouseInfo);
+      buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
+      if(clickedButton){
+        if(clickedButton->action == RESET){
+          clearSortSelections();
+        }
+        if(clickedButton->onClick){
+          clickedButton->onClick(clickedButton);
+          currentlyDisplaying = false;
+          arrayStep = 0;
+          clickedButton->isSelected = false;
+          printf("BREAKING\n");
+          return;
+        }
+
+      }
+      drawCursor(mouseInfo.x, mouseInfo.y);
+      prevLeft = mouseInfo.leftButtonClicked;
       waitForSync();
       PIXEL_BUFFER_START_1 = (volatile short int*)(*(PIXEL_CTRL_PTR_1 + 1));      // Check if the RESET button was pressed
   }
-  currentlyDisplaying = false;
-  arrayStep = 0;
+
+  double totalTime = tickRate * (currentState-1); //in seconds
+
+  while(1){
+    clearBackground();
+    drawBackground();
+    current_x = start_x;
+
+    for (int rect = 0; rect < n; rect++) {
+      int value = steps_arr[currentState-1][rect];
+
+      // Every color of rectangle is green
+      short int color = COLORS[5];
+
+      // Rectangle that is changing is in red
+      if (currentState > 0 && steps_arr[currentState][rect] != steps_arr[currentState - 1][rect]) {
+        color = COLORS[7];
+      }
+
+      drawRectangle(current_x, value, current_x + dx, 239, color);
+      drawBorder(current_x, value, current_x + dx, 239, COLORS[1]);
+
+      current_x += dx + spacing;
+    }
+
+    char finalText[40];
+    sprintf(finalText,"Total Time Taken  = %.2f Seconds", totalTime);
+
+    drawMediumText(110,35,finalText,0x0000);
+
+    mouse_packet mouseInfo = get_mouse_packet();
+    bool clicked_now = mouseInfo.leftButtonClicked && !prevLeft;
+    updateAllButtons(&mouseInfo);
+    buttonElement* clickedButton = getClickedButton(&mouseInfo, clicked_now);
+    if(clickedButton && clickedButton->action==RESET){
+      clearSortSelections();
+      if(clickedButton->onClick){
+        clickedButton->onClick(clickedButton);
+      }
+      currentlyDisplaying = false;
+      arrayStep = 0;
+      printf("BREAKING\n");
+      break;
+      
+
+    }
+    prevLeft = mouseInfo.leftButtonClicked;
+    drawCursor(mouseInfo.x, mouseInfo.y);
+    waitForSync();
+  }
+}
+
+void drawStartScreen(){
+
+  for(int y = 0; y < START_SCREEN_HEIGHT; y++){
+    for(int x = 0; x < START_SCREEN_WIDTH; x++){
+      plotPixel(x,y,START_SCREEN[y*START_SCREEN_WIDTH + x]);
+    }
+  }
+
+  for(int i = 0; i < RENDERING_LAYER; i++){
+    for(int buttons = 0; buttons < UI_ELEMENT_COUNT; buttons++){
+      GENERAL_ELEMENT* element = UI_ELEMENTS[buttons];
+      //printf("%d %d\n",element->boundary.topLeft.y,element->boundary.bottomRight.y);
+      if(element->type == BUTTON){
+        buttonElement* button = (buttonElement*)element;
+        if(button->action!=START){continue;}
+        bounds bound = button->parent.boundary;
+        if(button->isHover || button->isClicked){
+          //printf("darkened button \n");
+          short int darkenedColour = darkenColor(button->parent.backgroundColour);
+          drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, darkenedColour);
+        }else{
+          drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, button->parent.backgroundColour);
+        }
+        drawBorder(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, button->parent.borderColor);
+      }
+    }
+  }
+
+  drawMediumText(5,180,"START",0x0000);
+
+
 }
 
 void drawBackground() {
@@ -336,10 +578,11 @@ void drawBackground() {
     for(int buttons = 0; buttons < UI_ELEMENT_COUNT; buttons++){
       GENERAL_ELEMENT* element = UI_ELEMENTS[buttons];
       //printf("%d %d\n",element->boundary.topLeft.y,element->boundary.bottomRight.y);
-      if(element->type == BUTTON){
+      if(element->type == BUTTON ){
+        if(!shouldBeDrawn(currentState, element)){continue;}
         buttonElement* button = (buttonElement*)element;
         bounds bound = button->parent.boundary;
-        if(button->isHover || button->isClicked){
+        if(button->isHover || button->isSelected){
           //printf("darkened button \n");
           short int darkenedColour = darkenColor(button->parent.backgroundColour);
           drawRectangle(bound.topLeft.x,bound.topLeft.y,bound.bottomRight.x,bound.bottomRight.y, darkenedColour);
@@ -500,36 +743,53 @@ void drawBorder(int x1, int y1, int x2, int y2, short int line_color) {
 }
 
 void drawSmallChar(int x, int y, char c, short int color) {
-  if (c < 'A' || c > 'Z') return;
-  int index = c - 'A';
-  for (int row = 0; row < 5; row++) {
-    char bits = SMALL_CHAR[index][row];
-    for (int col = 0; col < 3; col++) {
-      if (bits & (1 << (2 - col))) {
-        plotPixel(x + col, y + row, color);
-      }
+    const unsigned char* glyph = getSmallGlyph(c);
+    if (!glyph) return;
+
+    for (int row = 0; row < 5; row++) {
+        unsigned char bits = glyph[row];
+        for (int col = 0; col < 3; col++) {
+            if (bits & (1 << (2 - col))) {
+                plotPixel(x + col, y + row, color);
+            }
+        }
     }
-  }
 }
+
+void drawMediumChar(int x, int y, char c, short int color) {
+    const unsigned char* glyph = getMediumGlyph(c);
+    if (!glyph) return;
+
+    for (int row = 0; row < 7; row++) {
+        unsigned char bits = glyph[row];
+        for (int col = 0; col < 5; col++) {
+            if (bits & (1 << (4 - col))) {
+                plotPixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
+void drawLargeChar(int x, int y, char c, short int color) {
+    const unsigned char* glyph = getLargeGlyph(c);
+    if (!glyph) return;
+
+    for (int row = 0; row < 8; row++) {
+        unsigned char bits = glyph[row];
+        for (int col = 0; col < 8; col++) {
+            if (bits & (1 << (7 - col))) {
+                plotPixel(x + col, y + row, color);
+            }
+        }
+    }
+}
+
 
 void drawSmallText(int x, int y, char* text, short int color) {
   while (*text) {
     drawSmallChar(x, y, *text, color);
     x += 4;
     text++;
-  }
-}
-
-void drawMediumChar(int x, int y, char c, short int color) {
-  if (c < 'A' || c > 'Z') return;
-  int index = c - 'A';
-  for (int row = 0; row < 7; row++) {
-    char bits = MEDIUM_CHAR[index][row];
-    for (int col = 0; col < 5; col++) {
-      if (bits & (1 << (4 - col))) {
-        plotPixel(x + col, y + row, color);
-      }
-    }
   }
 }
 
@@ -541,18 +801,6 @@ void drawMediumText(int x, int y, char* text, short int color) {
   }
 }
 
-void drawLargeChar(int x, int y, char c, short int color) {
-  if (c < 'A' || c > 'Z') return;
-  int index = c - 'A';
-  for (int row = 0; row < 8; row++) {
-    unsigned char bits = LARGE_CHAR[index][row];
-    for (int col = 0; col < 8; col++) {
-      if (bits & (1 << (7 - col))) {
-        plotPixel(x + col, y + row, color);
-      }
-    }
-  }
-}
 
 void drawLargeText(int x, int y, char* text, short int color) {
   while (*text) {

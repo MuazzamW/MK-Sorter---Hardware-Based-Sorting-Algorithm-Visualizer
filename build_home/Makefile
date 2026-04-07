@@ -17,7 +17,7 @@ SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c
 # HDRS	:= 
 # SRCS	:= $(MAIN) ../src/interrupt_handler.c
 
-#COMBINED OUTPUT COMPILE
+# #COMBINED OUTPUT COMPILE
 # MAIN	:= ../combined_output.c
 # HDRS	:= 
 # SRCS	:= $(MAIN)
