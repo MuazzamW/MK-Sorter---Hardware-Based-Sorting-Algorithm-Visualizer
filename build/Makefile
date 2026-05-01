@@ -4,10 +4,6 @@ MAIN	:= ../src/main.c
 HDRS	:= ../src/address_map.h ../src/interrupt_handler.h 
 SRCS	:= $(MAIN) ../src/interrupt_handler.c #list any additional sources
 
-# MAIN	:= ../test_algo.c
-# HDRS	:=  
-# SRCS	:= $(MAIN) #list any additional sources
-
 SHELL	:= cmd.exe
 
 # DE1-SoC

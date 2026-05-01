@@ -7,21 +7,6 @@ MAIN	:= ../main.c
 HDRS	:= ../src/address_map.h ../src/interrupt_handler.h ../src/algorithms.h ../src/renderer.h ../src/IMAGES.h
 SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/algorithms.c ../src/renderer.c ../src/UI_ELEMENTS.c
 
-#MOUSE INTERFACE COMPILE
-# MAIN	:= ../src/main.c
-# HDRS	:= ../src/interrupt_handler.h ../src/renderer.h
-# SRCS	:= $(MAIN) ../src/interrupt_handler.c ../src/renderer.c
-
-#TEST_ALGO COMPILE
-# MAIN	:= ../test_algo.c
-# HDRS	:= 
-# SRCS	:= $(MAIN) ../src/interrupt_handler.c
-
-# #COMBINED OUTPUT COMPILE
-# MAIN	:= ../combined_output.c
-# HDRS	:= 
-# SRCS	:= $(MAIN)
-
 SHELL	:= cmd.exe
 
 # DE1-SoC

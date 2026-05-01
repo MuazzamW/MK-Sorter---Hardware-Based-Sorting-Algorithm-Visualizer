@@ -1,5 +1,3 @@
-/* DISCLAIMER: This code was created with generative AI (gemini) */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
