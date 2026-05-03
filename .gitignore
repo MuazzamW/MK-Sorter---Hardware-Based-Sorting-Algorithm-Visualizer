@@ -1,13 +1,9 @@
-# Ignore everything
-*
 
-# Unignore the .gitignore file itself
+*
 !.gitignore
 
-# Unignore all directories, so Git can look inside them
 !*/
-
-# Unignore all .c files in all directories
 !*.c
 !*Makefile
 !*.h
+!*.bat
