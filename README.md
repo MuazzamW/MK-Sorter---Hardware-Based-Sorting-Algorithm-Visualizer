@@ -6,7 +6,7 @@ This project implements a hardware based sorting algorithm visualizer by writing
 - PS/2 Mouse Support
 - Fully Interrupt Driven Memory Mapped IO interactions
 - 4 different sorting algorithms to visualize
-- 4 different options for the # of bars to display 
+- 4 different options for the numbers of bars to display 
 
 
 ## Demo
